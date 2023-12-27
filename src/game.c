@@ -5,18 +5,30 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     (void) w;
     (void) h;
 
-    // Init grid
-    Cell *cells[10];
+    Map map;
 
+    // Initialize walls
+    map.walls[0] = Wall_init(0, 200, 750, 10);
+    map.walls[1] = Wall_init(0, 400, 750, 10);
+    map.walls[2] = Wall_init(0, 200, 10, 200);
+    map.walls[3] = Wall_init(750, 200, 10, 210);
+    if (map.walls[0] == NULL || map.walls[1] == NULL)
+    {
+        fprintf(stderr, "Error while initializing walls !\n");
+        return false;
+    }
+
+
+    // Initialize cells
     for(int i = 0; i < 10; ++i)
     {
-        cells[i] = Cell_init(0, 0, 10);
-        if (cells[i] == NULL)
+        map.cells[i] = Cell_init(50, 300, 10);
+        if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
             for(int j = 0; j < i; ++j)
             {
-                Cell_destroy(cells[j]);
+                Cell_destroy(map.cells[j]);
             }
             return false;
         }
@@ -39,6 +51,12 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Get available event
         while (SDL_PollEvent(&e))
         {
+            // User requests quit
+            if (e.type == SDL_QUIT) {
+                quit = true;
+                break;
+            }
+
             if (e.type == SDL_KEYDOWN)
             {
                 switch(e.key.keysym.sym)
@@ -47,16 +65,19 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                         quit = true;
                         break;
                     case SDLK_z:
-                        cells[0]->goingUp = true;
+                        map.cells[0]->goingUp = true;
                         break;
                     case SDLK_q:
-                        cells[0]->goingLeft = true;
+                        map.cells[0]->goingLeft = true;
                         break;
                     case SDLK_s:
-                        cells[0]->goingDown = true;
+                        map.cells[0]->goingDown = true;
                         break;
                     case SDLK_d:
-                        cells[0]->goingRight = true;
+                        map.cells[0]->goingRight = true;
+                        break;
+                    case SDLK_r:
+                        Game_reset(&map);
                         break;
                     default:
                         break;
@@ -68,16 +89,16 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                 switch(e.key.keysym.sym)
                 {
                     case SDLK_z:
-                        cells[0]->goingUp = false;
+                        map.cells[0]->goingUp = false;
                         break;
                     case SDLK_q:
-                        cells[0]->goingLeft = false;
+                        map.cells[0]->goingLeft = false;
                         break;
                     case SDLK_s:
-                        cells[0]->goingDown = false;
+                        map.cells[0]->goingDown = false;
                         break;
                     case SDLK_d:
-                        cells[0]->goingRight = false;
+                        map.cells[0]->goingRight = false;
                         break;
                     default:
                         break;
@@ -86,35 +107,33 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         }
 
         // Update
-        Cell_update(cells[0]);
+        Cell_update(map.cells[0], &map);
 
         // Set background color
         Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);
 
-        // Render grid
+        // Render walls
+        for (int i = 0; i < 4; ++i)
+            Wall_render(map.walls[i], renderer);
+
+        // Render cells
         for (int i = 0; i < 10; ++i)
-        {
-            Cell_render(cells[i], renderer);
-        }
+            Cell_render(map.cells[i], renderer);
 
         // Show message
-        char message[100] = "Speed: ";
-        char speed[10];
-        sprintf(speed, "%f", cells[0]->speed);
-        strcat(message, speed);
+        char message[100];
+
+        sprintf(message, "Speed: %f", map.cells[0]->speed);
         stringRGBA(renderer, 100, 50, message,
                    COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
 
-        message[0] = '\0';
-        strcat(message, "Angle: ");
-        char angle_str[10];
-        sprintf(angle_str, "%f", cells[0]->angle);
-        strcat(message, angle_str);
+        sprintf(message, "Angle: %f", map.cells[0]->angle);
         stringRGBA(renderer, 100, 75, message,
                    COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
 
+        sprintf(message, "Score: %d", map.cells[0]->score);
         stringRGBA(renderer, 100, 100,
-                   "This is a falling brick < Press RIGTH and LEFT to move >",
+                   message,
                    COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
 
         // Update screen
@@ -125,4 +144,12 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     return true;
+}
+
+void Game_reset(Map *map)
+{
+    for (int i = 0; i < 10; ++i)
+    {
+        Cell_reset(map->cells[i]);
+    }
 }

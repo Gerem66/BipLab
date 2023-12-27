@@ -10,10 +10,8 @@ Cell *Cell_init(int x, int y, int radius)
         return NULL;
     }
 
-    cell->position.x = x;
-    cell->position.y = y;
-    cell->speed = 0.0f;
-    cell->angle = 0.0f;
+    cell->positionInit.x = x;
+    cell->positionInit.y = y;
 
     cell->angleVelocity = 4.0f;
 
@@ -21,19 +19,19 @@ Cell *Cell_init(int x, int y, int radius)
     cell->speedMax = 6.0f;
     cell->velocity = 0.5f;
 
-    cell->goingUp = false;
-    cell->goingDown = false;
-    cell->goingLeft = false;
-    cell->goingRight = false;
-
     cell->radius = radius;
     cell->color = COLOR_BLUE;
+
+    Cell_reset(cell);
 
     return cell;
 }
 
-void Cell_update(Cell *cell)
+void Cell_update(Cell *cell, Map *map)
 {
+    if (!cell->isAlive)
+        return;
+
     // Update angle
     if (cell->goingLeft)
     {
@@ -73,6 +71,19 @@ void Cell_update(Cell *cell)
     // Update position
     cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180);
     cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180);
+
+    // Get score
+    cell->score = (int)cell->position.x - 50;
+
+    // Check cell collision with walls
+    for (int i = 0; i < 4; i++)
+    {
+        if (check_rect_collision(cell, &map->walls[i]->rect))
+        {
+            cell->isAlive = false;
+            break;
+        }
+    }
 }
 
 void Cell_render(Cell *cell, SDL_Renderer *renderer)
@@ -83,6 +94,17 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer)
                            cell->color.g,
                            cell->color.b,
                            cell->color.a);
+
+    if (!cell->isAlive)
+    {
+        // Render dead cell
+        SDL_SetRenderDrawColor(renderer,
+                                 COLOR_RED.r,
+                                 COLOR_RED.g,
+                                 COLOR_RED.b,
+                                 COLOR_RED.a);
+        return;
+    }
 
     // Render filled circle
     SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
@@ -117,6 +139,22 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer)
 
     // Draw mouth
     SDL_RenderDrawArc(renderer, mouthX, mouthY, mouthRadius, mouthStartAngle, mouthEndAngle);
+}
+
+void Cell_reset(Cell *cell)
+{
+    cell->isAlive = true;
+    cell->score = 0;
+
+    cell->position.x = cell->positionInit.x;
+    cell->position.y = cell->positionInit.y;
+    cell->speed = 0.0f;
+    cell->angle = 0.0f;
+
+    cell->goingUp = false;
+    cell->goingDown = false;
+    cell->goingLeft = false;
+    cell->goingRight = false;
 }
 
 void Cell_destroy(Cell *cell)
