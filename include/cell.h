@@ -1,26 +1,38 @@
 #ifndef CELL_H
 #define CELL_H
 
+#include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 #include <SDL.h>
 
+typedef struct Ray Ray;
 typedef struct Cell Cell;
 
 #include "game.h"
+#include "NeuralNetwork.h"
 #include "collisions.h"
 #include "wall.h"
 #include "utils.h"
 
 
+struct Ray
+{
+    float angle;
+    float distance;
+    float distanceMax;
+};
 struct Cell
 {
     bool isAlive;
     int score;
+    Ray rays[7];
 
-    SDL_Point position;
-    SDL_Point positionInit;
+    bool isAI;
+    NeuralNetwork *nn;
+
+    SDL_FPoint position;
+    SDL_FPoint positionInit;
     float angle;
     float angleVelocity;
     float angleVelocityMax;
@@ -35,15 +47,12 @@ struct Cell
     bool goingLeft;
     bool goingRight;
 
-    //int health;
-    //int healthMax;
-
     int radius;
     SDL_Color color;
 };
 
 
-Cell *Cell_init(int x, int y, int radius);
+Cell *Cell_init(int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_render(Cell *cell, SDL_Renderer *renderer);
 void Cell_reset(Cell *cell);

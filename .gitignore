@@ -4,3 +4,7 @@
 # CMake
 build
 CMakeLists.txt.*
+
+# Markdown
+*.md
+!README.md

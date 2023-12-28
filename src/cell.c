@@ -1,7 +1,7 @@
 #include "cell.h"
 
 
-Cell *Cell_init(int x, int y, int radius)
+Cell *Cell_init(int x, int y, bool isAI)
 {
     Cell *cell = malloc(sizeof(Cell));
     if (cell == NULL)
@@ -10,19 +10,33 @@ Cell *Cell_init(int x, int y, int radius)
         return NULL;
     }
 
+    cell->isAI = isAI;
     cell->positionInit.x = x;
     cell->positionInit.y = y;
 
     cell->angleVelocity = 4.0f;
 
-    cell->speedMin = -3.0f;
-    cell->speedMax = 6.0f;
-    cell->velocity = 0.5f;
+    cell->speedMin = -2.0f;
+    cell->speedMax = 3.0f;
+    cell->velocity = 0.4f;
 
-    cell->radius = radius;
+    cell->radius = 10;
     cell->color = COLOR_BLUE;
 
+    // Init rays from -PI to PI
+    for (int i = 0; i < 7; i++)
+    {
+        cell->rays[i].angle = -PI + i * PI / 3;
+        cell->rays[i].distance = 0.0f;
+        cell->rays[i].distanceMax = 50.0f;
+    }
+
     Cell_reset(cell);
+
+    // Create NeuralNetwork
+    int topology[] = {7, 4, 3, 4};
+    cell->nn = createNeuralNetwork(topology, 4);
+    setRandomWeights(cell->nn, -1, 1);
 
     return cell;
 }
@@ -31,6 +45,26 @@ void Cell_update(Cell *cell, Map *map)
 {
     if (!cell->isAlive)
         return;
+
+    if (cell->isAI)
+    {
+        double inputs[] = {
+            cell->rays[0].distance / cell->rays[0].distanceMax,
+            cell->rays[1].distance / cell->rays[1].distanceMax,
+            cell->rays[2].distance / cell->rays[2].distanceMax,
+            cell->rays[3].distance / cell->rays[3].distanceMax,
+            cell->rays[4].distance / cell->rays[4].distanceMax,
+            cell->rays[5].distance / cell->rays[5].distanceMax,
+            cell->rays[6].distance / cell->rays[6].distanceMax
+        };
+        double outputs[4];
+        processInputs(cell->nn, inputs, outputs);
+
+        cell->goingUp = outputs[0] > 0.5;
+        cell->goingDown = outputs[1] > 0.5;
+        cell->goingLeft = outputs[2] > 0.5;
+        cell->goingRight = outputs[3] > 0.5;
+    }
 
     // Update angle
     if (cell->goingLeft)
@@ -69,8 +103,8 @@ void Cell_update(Cell *cell, Map *map)
     }
 
     // Update position
-    cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180);
-    cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180);
+    cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180.0f);
+    cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180.0f);
 
     // Get score
     cell->score = (int)cell->position.x - 50;
@@ -83,6 +117,21 @@ void Cell_update(Cell *cell, Map *map)
             cell->isAlive = false;
             break;
         }
+    }
+
+    // Calculate rays
+    for (int i = 0; i < 7; i++)
+    {
+        float distance = cell->rays[i].distanceMax;
+        for (int j = 0; j < 4; j++)
+        {
+            float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
+            if (newDistance < distance)
+                distance = newDistance;
+            if (newDistance < 0.0f)
+                distance = 0.0f;
+        }
+        cell->rays[i].distance = distance;
     }
 }
 
@@ -108,6 +157,41 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer)
 
     // Render filled circle
     SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+
+    // Render rays
+    for (int i = 0; i < 7; i++)
+    {
+        // Set renderer color to ray color
+        if (cell->rays[i].distance < cell->rays[i].distanceMax)
+        {
+            SDL_SetRenderDrawColor(renderer,
+                                   COLOR_RED.r,
+                                   COLOR_RED.g,
+                                   COLOR_RED.b,
+                                   COLOR_RED.a);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer,
+                                   COLOR_WHITE.r,
+                                   COLOR_WHITE.g,
+                                   COLOR_WHITE.b,
+                                   COLOR_WHITE.a);
+        }
+
+        // Render ray
+        SDL_RenderDrawLine(renderer,
+                           cell->position.x,
+                           cell->position.y,
+                           cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                           cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
+
+        // Render ray intersection
+        SDL_RenderFillCircle(renderer,
+                             cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                             cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                             2);
+    }
 
     // Draw a smiley face with the cell angle
     // Two small eyes with small arc for the mouth
@@ -159,5 +243,6 @@ void Cell_reset(Cell *cell)
 
 void Cell_destroy(Cell *cell)
 {
+    freeNeuralNetwork(cell->nn);
     free(cell);
 }

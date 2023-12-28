@@ -1,7 +1,7 @@
 #include "wall.h"
 
 
-Wall *Wall_init(int x, int y, int width, int height)
+Wall *Wall_init(float x, float y, float width, float height)
 {
     Wall *wall = malloc(sizeof(Wall));
     if (wall == NULL)
@@ -22,7 +22,7 @@ Wall *Wall_init(int x, int y, int width, int height)
 void Wall_render(Wall *wall, SDL_Renderer *renderer)
 {
     SDL_SetRenderDrawColor(renderer, COLOR_BREAKUP(wall->color));
-    SDL_RenderFillRect(renderer, &wall->rect);
+    SDL_RenderFillRectF(renderer, &wall->rect);
 }
 
 void Wall_destroy(Wall *wall)

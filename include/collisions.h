@@ -10,6 +10,7 @@
 #include "utils.h"
 
 
-bool check_rect_collision(Cell *cell, SDL_Rect *hitbox);
+bool check_rect_collision(Cell *cell, SDL_FRect *hitbox);
+float check_ray_collision(Cell *cell, SDL_FRect *hitbox, int rayIndex);
 
 #endif // COLLISIONS_H

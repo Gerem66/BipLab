@@ -8,10 +8,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     Map map;
 
     // Initialize walls
-    map.walls[0] = Wall_init(0, 200, 750, 10);
-    map.walls[1] = Wall_init(0, 400, 750, 10);
-    map.walls[2] = Wall_init(0, 200, 10, 200);
-    map.walls[3] = Wall_init(750, 200, 10, 210);
+    map.walls[0] = Wall_init(0.0f, 200.0f, 750.0f, 10.0f);
+    map.walls[1] = Wall_init(0.0f, 400.0f, 750.0f, 10.0f);
+    map.walls[2] = Wall_init(0.0f, 200.0f, 10.0f, 200.0f);
+    map.walls[3] = Wall_init(750.0f, 200.0f, 10.0f, 210.0f);
     if (map.walls[0] == NULL || map.walls[1] == NULL)
     {
         fprintf(stderr, "Error while initializing walls !\n");
@@ -22,7 +22,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     // Initialize cells
     for(int i = 0; i < 10; ++i)
     {
-        map.cells[i] = Cell_init(50, 300, 10);
+        map.cells[i] = Cell_init(50, 300, i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
@@ -107,7 +107,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         }
 
         // Update
-        Cell_update(map.cells[0], &map);
+        for (int i = 0; i < 10; ++i)
+            Cell_update(map.cells[i], &map);
 
         // Set background color
         Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);

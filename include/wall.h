@@ -13,11 +13,11 @@ typedef struct Wall Wall;
 
 struct Wall
 {
-    SDL_Rect rect;
+    SDL_FRect rect;
     SDL_Color color;
 };
 
-Wall *Wall_init(int x, int y, int width, int height);
+Wall *Wall_init(float x, float y, float width, float height);
 void Wall_render(Wall *wall, SDL_Renderer *renderer);
 void Wall_destroy(Wall *wall);
 
