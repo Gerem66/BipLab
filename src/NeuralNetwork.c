@@ -48,13 +48,33 @@ void processInputs(NeuralNetwork *nn, double *inputs, double *outputs) {
             for (int k = 0; k < layer->neuronCount; k++) {
                 layer->outputs[j] += currentOutputs[k] * layer->weights[k * layer->nextLayerNeuronCount + j];
             }
-            // Appliquer une fonction d'activation ici, par exemple sigmoid
             layer->outputs[j] = 1.0 / (1.0 + exp(-layer->outputs[j]));
         }
         currentOutputs = layer->outputs;
     }
     for (int i = 0; i < nn->layers[nn->topologySize - 2]->nextLayerNeuronCount; i++) {
         outputs[i] = currentOutputs[i];
+    }
+}
+
+void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutationRate, float mutationProbability)
+{
+    for (int i = 0; i < nn->topologySize - 1; i++) {
+        NeuralLayer *layer = nn->layers[i];
+        NeuralLayer *parentLayer = parent->layers[i];
+        for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++) {
+            double delta = parentLayer->weights[j] - layer->weights[j];
+            double mutation = delta * mutationRate;
+            layer->weights[j] += mutation;
+            if (rand() / (double)RAND_MAX < mutationProbability) {
+                layer->weights[j] += randomWeight(-0.1, 0.1);
+            }
+            if (layer->weights[j] < -1.0) {
+                layer->weights[j] = -1.0;
+            } else if (layer->weights[j] > 1.0) {
+                layer->weights[j] = 1.0;
+            }
+        }
     }
 }
 

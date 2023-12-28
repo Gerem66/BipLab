@@ -20,6 +20,7 @@ struct NeuralNetwork {
 
 NeuralNetwork* createNeuralNetwork(int *topology, int topologySize);
 void processInputs(NeuralNetwork *nn, double *inputs, double *outputs);
+void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutationRate, float mutationProbability);
 void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue);
 void freeNeuralNetwork(NeuralNetwork *nn);
 

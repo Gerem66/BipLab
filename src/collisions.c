@@ -78,7 +78,7 @@ float findIntersectionDistance(SDL_FPoint lineA1, SDL_FPoint lineA2,
     if (findIntersection(lineA1, lineA2, lineB1, lineB2, &intersection)) {
         return distance(lineA1, intersection);
     } else {
-        return 50; // Pas d'intersection
+        return -1; // Pas d'intersection
     }
 }
 
@@ -101,7 +101,7 @@ float check_ray_collision(Cell *cell, SDL_FRect *hitbox, int rayIndex)
                                                      (SDL_FPoint){cell->position.x + cos(angle) * ray->distanceMax, 
                                                                   cell->position.y + sin(angle) * ray->distanceMax}, 
                                                      corners[i], corners[(i + 1) % 4]);
-        if (newDistance < nearestDistance) {
+        if (newDistance != -1 && newDistance < nearestDistance) {
             nearestDistance = newDistance;
         }
     }

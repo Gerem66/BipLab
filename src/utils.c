@@ -52,6 +52,11 @@ int Utils_rand(int min, int max)
     return (rand() % (max + 1)) + min;
 }
 
+float Utils_randomFloat(float min, float max)
+{
+	return ((float)rand() / (float)RAND_MAX) * (max - min) + min;
+}
+
 // Draw a filled circle on the renderer
 // https://gist.github.com/henkman/1b6f4492b82dc76adad1dc110c923baa
 void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius)

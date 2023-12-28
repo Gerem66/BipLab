@@ -6,6 +6,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     (void) h;
 
     Map map;
+    map.startTime = time(NULL);
+    map.generation = 1;
+    map.frames = 1;
+    map.maxScore = 0;
+    map.maxAverageScore = 0;
+    map.isRunning = true;
+    map.verticalSync = true;
+    map.renderEnabled = true;
 
     // Initialize walls
     map.walls[0] = Wall_init(0.0f, 200.0f, 750.0f, 10.0f);
@@ -18,9 +26,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         return false;
     }
 
-
     // Initialize cells
-    for(int i = 0; i < 10; ++i)
+    for(int i = 0; i < CELL_COUNT; ++i)
     {
         map.cells[i] = Cell_init(50, 300, i > 0);
         if (map.cells[i] == NULL)
@@ -79,6 +86,15 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                     case SDLK_r:
                         Game_reset(&map);
                         break;
+                    case SDLK_i:
+                        map.renderEnabled = !map.renderEnabled;
+                        break;
+                    case SDLK_o:
+                        map.verticalSync = !map.verticalSync;
+                        break;
+                    case SDLK_p:
+                        map.isRunning = !map.isRunning;
+                        break;
                     default:
                         break;
                 }
@@ -107,41 +123,43 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         }
 
         // Update
-        for (int i = 0; i < 10; ++i)
-            Cell_update(map.cells[i], &map);
+        if (map.isRunning)
+        {
+            for (int i = 0; i < CELL_COUNT; ++i)
+                Cell_update(map.cells[i], &map);
+            map.frames++;
+        }
 
-        // Set background color
+        // Render
         Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);
+        if (map.renderEnabled)
+            Game_render(renderer, &map);
 
-        // Render walls
-        for (int i = 0; i < 4; ++i)
-            Wall_render(map.walls[i], renderer);
+        // Check generation
+        bool allDead = true;
+        for (int i = 1; i < CELL_COUNT; ++i)
+        {
+            if (map.cells[i]->isAlive)
+            {
+                allDead = false;
+                break;
+            }
+        }
 
-        // Render cells
-        for (int i = 0; i < 10; ++i)
-            Cell_render(map.cells[i], renderer);
+        if (allDead || map.frames % 800 == 0)
+        {
+            Game_reset(&map);
+        }
 
-        // Show message
-        char message[100];
-
-        sprintf(message, "Speed: %f", map.cells[0]->speed);
-        stringRGBA(renderer, 100, 50, message,
-                   COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
-
-        sprintf(message, "Angle: %f", map.cells[0]->angle);
-        stringRGBA(renderer, 100, 75, message,
-                   COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
-
-        sprintf(message, "Score: %d", map.cells[0]->score);
-        stringRGBA(renderer, 100, 100,
-                   message,
-                   COLOR_LIGHT_GRAY.r, COLOR_LIGHT_GRAY.g, COLOR_LIGHT_GRAY.b, COLOR_LIGHT_GRAY.a);
+        // Show messages
+        Render_Text(renderer, &map, COLOR_LIGHT_GRAY);
 
         // Update screen
         SDL_RenderPresent(renderer);
 
         // Delay
-        SDL_framerateDelay(&fpsmanager);
+        if (map.verticalSync)
+            SDL_framerateDelay(&fpsmanager);
     }
 
     return true;
@@ -149,8 +167,105 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
 
 void Game_reset(Map *map)
 {
-    for (int i = 0; i < 10; ++i)
+    // Get max average score
+    float averageScore = 0.0f;
+    for (int i = 1; i < CELL_COUNT; ++i)
     {
+        averageScore += map->cells[i]->score;
+        if (map->cells[i]->score > map->maxScore)
+            map->maxScore = map->cells[i]->score;
+    }
+    averageScore /= (CELL_COUNT - 1);
+    if (averageScore > map->maxAverageScore)
+        map->maxAverageScore = averageScore;
+
+    // Get best cell
+    Cell *bestCell = map->cells[1];
+    for (int i = 2; i < CELL_COUNT; ++i)
+        if (map->cells[i]->score > bestCell->score)
+            bestCell = map->cells[i];
+
+    // Mutate cells
+    for (int i = 1; i < CELL_COUNT; ++i)
+        Cell_mutate(map->cells[i], bestCell, 0.2f, 0.05f);
+
+    // Reset cells state
+    for (int i = 0; i < CELL_COUNT; ++i)
         Cell_reset(map->cells[i]);
+
+    map->frames = 1;
+    map->generation++;
+}
+
+void Game_render(SDL_Renderer *renderer, Map *map)
+{
+        // Render walls
+        for (int i = 0; i < 4; ++i)
+            Wall_render(map->walls[i], renderer);
+
+        // Render cells
+        for (int i = 0; i < CELL_COUNT; ++i)
+            Cell_render(map->cells[i], renderer);
+}
+
+void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
+{
+    char message[100];
+
+    time_t currentTime = time(NULL) - map->startTime;
+    sprintf(message, "Time: %dm %ds", (int)(currentTime / 60), (int)(currentTime % 60));
+    stringRGBA(renderer, 100, 25, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Generation: %d (Frame %d/1000)", map->generation, map->frames % 1000);
+    stringRGBA(renderer, 100, 50, message, color.r, color.g, color.b, color.a);
+
+    int aliveCount = 0;
+    for (int i = 0; i < CELL_COUNT; ++i)
+        if (map->cells[i]->isAlive)
+            aliveCount++;
+    sprintf(message, "Cells count: %d (alive: %d)", CELL_COUNT, aliveCount);
+    stringRGBA(renderer, 100, 75, message, color.r, color.g, color.b, color.a);
+
+    Cell *bestCell = map->cells[1];
+    for (int i = 2; i < CELL_COUNT; ++i)
+        if (map->cells[i]->score > bestCell->score)
+            bestCell = map->cells[i];
+    float averageScore = 0.0f;
+    for (int i = 1; i < CELL_COUNT; ++i)
+        averageScore += map->cells[i]->score;
+    sprintf(message, "Best score: %d (max: %d)", bestCell->score, map->maxScore);
+    stringRGBA(renderer, 100, 100, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Average score: %d (max: %d)", (int)(averageScore / (CELL_COUNT - 1)), map->maxAverageScore);
+    stringRGBA(renderer, 100, 125, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
+    stringRGBA(renderer, 500, 25, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Angle: %f", map->cells[0]->angle);
+    stringRGBA(renderer, 500, 75, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Speed: %f", map->cells[0]->speed);
+    stringRGBA(renderer, 500, 50, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Score: %d", map->cells[0]->score);
+    stringRGBA(renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+
+    // Show neural netword values of each layers
+    if (bestCell->isAI)
+    {
+        float x = 50.0f;
+        float y = 450.0f;
+        for (int i = 0; i < bestCell->nn->topologySize - 1; ++i)
+        {
+            sprintf(message, "Layer %d:", i);
+            stringRGBA(renderer, x, y + i * 25, message, color.r, color.g, color.b, color.a);
+
+            for (int j = 0; j < bestCell->nn->layers[i]->nextLayerNeuronCount; ++j)
+            {
+                sprintf(message, "%f", bestCell->nn->layers[i]->weights[j]);
+                stringRGBA(renderer, x + 100 * (j + 1), y + i * 25, message, color.r, color.g, color.b, color.a);
+            }
+        }
     }
 }

@@ -22,19 +22,21 @@ Cell *Cell_init(int x, int y, bool isAI)
 
     cell->radius = 10;
     cell->color = COLOR_BLUE;
+    if (!isAI)
+        cell->color = COLOR_GREEN;
 
     // Init rays from -PI to PI
     for (int i = 0; i < 7; i++)
     {
         cell->rays[i].angle = -PI + i * PI / 3;
         cell->rays[i].distance = 0.0f;
-        cell->rays[i].distanceMax = 50.0f;
+        cell->rays[i].distanceMax = 100.0f;
     }
 
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {7, 4, 3, 4};
+    int topology[] = {7, 50, 20, 4};
     cell->nn = createNeuralNetwork(topology, 4);
     setRandomWeights(cell->nn, -1, 1);
 
@@ -106,9 +108,6 @@ void Cell_update(Cell *cell, Map *map)
     cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180.0f);
     cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180.0f);
 
-    // Get score
-    cell->score = (int)cell->position.x - 50;
-
     // Check cell collision with walls
     for (int i = 0; i < 4; i++)
     {
@@ -118,6 +117,11 @@ void Cell_update(Cell *cell, Map *map)
             break;
         }
     }
+
+    // Get score
+    cell->score = (int)cell->position.x - 50;
+    if (!cell->isAlive)
+        cell->score = 0;
 
     // Calculate rays
     for (int i = 0; i < 7; i++)
@@ -135,15 +139,45 @@ void Cell_update(Cell *cell, Map *map)
     }
 }
 
+void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationProbability)
+{
+    // Mutate NeuralNetwork
+    mutateNeuralNetwork(cell->nn, parent->nn, mutationRate, mutationProbability);
+
+    if (cell->score < 100) {
+        for (int i = 0; i < 10; ++i)
+            mutateNeuralNetwork(cell->nn, parent->nn, mutationRate, mutationProbability);
+    }
+
+    // Mutate color
+    if (Utils_rand(0, 10) < 5)
+    {
+        cell->color.r += 1;
+        cell->color.g += 1;
+        cell->color.b += 1;
+        if (cell->color.r == 0)
+            cell->color.r = 255;
+        if (cell->color.g == 0)
+            cell->color.g = 255;
+        if (cell->color.b == 0)
+            cell->color.b = 255;
+    }
+    else
+    {
+        cell->color.r -= 1;
+        cell->color.g -= 1;
+        cell->color.b -= 1;
+        if (cell->color.r == 255)
+            cell->color.r = 0;
+        if (cell->color.g == 255)
+            cell->color.g = 0;
+        if (cell->color.b == 255)
+            cell->color.b = 0;
+    }
+}
+
 void Cell_render(Cell *cell, SDL_Renderer *renderer)
 {
-    // Set renderer color to cell color
-    SDL_SetRenderDrawColor(renderer,
-                           cell->color.r,
-                           cell->color.g,
-                           cell->color.b,
-                           cell->color.a);
-
     if (!cell->isAlive)
     {
         // Render dead cell
@@ -152,11 +186,25 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer)
                                  COLOR_RED.g,
                                  COLOR_RED.b,
                                  COLOR_RED.a);
+
+        // Render filled circle
+        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
         return;
     }
 
+    // Set renderer color to cell color
+    SDL_SetRenderDrawColor(renderer,
+                           cell->color.r,
+                           cell->color.g,
+                           cell->color.b,
+                           cell->color.a);
+
     // Render filled circle
     SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+
+    // if dead, not render smile & rays
+    if (!cell->isAlive)
+        return;
 
     // Render rays
     for (int i = 0; i < 7; i++)
