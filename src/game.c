@@ -2,43 +2,53 @@
 
 bool Game_start(SDL_Renderer *renderer, int w, int h)
 {
-    (void) w;
-    (void) h;
-
     Map map;
+    map.width = w;
+    map.height = h;
     map.startTime = time(NULL);
     map.generation = 1;
     map.frames = 1;
     map.maxScore = 0;
-    map.maxAverageScore = 0;
     map.isRunning = true;
     map.verticalSync = true;
+    map.renderText = true;
+    map.renderRays = false;
     map.renderEnabled = true;
+    map.cellCount = 0;
 
-    // Initialize walls
-    map.walls[0] = Wall_init(0.0f, 200.0f, 750.0f, 10.0f);
-    map.walls[1] = Wall_init(0.0f, 400.0f, 750.0f, 10.0f);
-    map.walls[2] = Wall_init(0.0f, 200.0f, 10.0f, 200.0f);
-    map.walls[3] = Wall_init(750.0f, 200.0f, 10.0f, 210.0f);
-    if (map.walls[0] == NULL || map.walls[1] == NULL)
+    // Initialize foods
+    for (int i = 0; i < FOOD_COUNT; ++i)
     {
-        fprintf(stderr, "Error while initializing walls !\n");
-        return false;
+        map.foods[i] = Food_init(Utils_rand(0, map.width), Utils_rand(0, map.height));
+        if (map.foods[i] == NULL)
+        {
+            fprintf(stderr, "Error while initializing food %d !\n", i);
+            for(int j = 0; j < i; ++j)
+            {
+                Food_destroy(map.foods[j]);
+            }
+            return false;
+        }
     }
 
     // Initialize cells
     for(int i = 0; i < CELL_COUNT; ++i)
     {
-        map.cells[i] = Cell_init(50, 300, i > 0);
+        if (i > CELL_INIT)
+        {
+            map.cells[i] = NULL;
+            continue;
+        }
+        map.cells[i] = Cell_init(map.width / 2, map.height / 2, i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
             for(int j = 0; j < i; ++j)
-            {
-                Cell_destroy(map.cells[j]);
-            }
+                if (map.cells[j] != NULL)
+                    Cell_destroy(map.cells[j]);
             return false;
         }
+        map.cellCount++;
     }
 
     // Initialize framerate manager
@@ -84,7 +94,13 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                         map.cells[0]->goingRight = true;
                         break;
                     case SDLK_r:
-                        Game_reset(&map);
+                        //Game_reset(&map);
+                        break;
+                    case SDLK_t:
+                        map.renderText = !map.renderText;
+                        break;
+                    case SDLK_y:
+                        map.renderRays = !map.renderRays;
                         break;
                     case SDLK_i:
                         map.renderEnabled = !map.renderEnabled;
@@ -125,8 +141,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Update
         if (map.isRunning)
         {
-            for (int i = 0; i < CELL_COUNT; ++i)
-                Cell_update(map.cells[i], &map);
+            for (int i = 0; i < map.cellCount; ++i)
+                if (map.cells[i] != NULL)
+                    Cell_update(map.cells[i], &map);
             map.frames++;
         }
 
@@ -137,22 +154,23 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
 
         // Check generation
         bool allDead = true;
-        for (int i = 1; i < CELL_COUNT; ++i)
+        for (int i = 1; i < map.cellCount; ++i)
         {
-            if (map.cells[i]->isAlive)
+            if (map.cells[i] != NULL && map.cells[i]->isAlive)
             {
                 allDead = false;
                 break;
             }
         }
 
-        if (allDead || map.frames % 800 == 0)
+        if (allDead)
         {
             Game_reset(&map);
         }
 
         // Show messages
-        Render_Text(renderer, &map, COLOR_LIGHT_GRAY);
+        if (map.renderText)
+            Render_Text(renderer, &map, COLOR_LIGHT_GRAY);
 
         // Update screen
         SDL_RenderPresent(renderer);
@@ -167,31 +185,45 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
 
 void Game_reset(Map *map)
 {
-    // Get max average score
-    float averageScore = 0.0f;
-    for (int i = 1; i < CELL_COUNT; ++i)
-    {
-        averageScore += map->cells[i]->score;
-        if (map->cells[i]->score > map->maxScore)
-            map->maxScore = map->cells[i]->score;
-    }
-    averageScore /= (CELL_COUNT - 1);
-    if (averageScore > map->maxAverageScore)
-        map->maxAverageScore = averageScore;
-
     // Get best cell
     Cell *bestCell = map->cells[1];
-    for (int i = 2; i < CELL_COUNT; ++i)
-        if (map->cells[i]->score > bestCell->score)
+    for (int i = 2; i < map->cellCount; ++i)
+        if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
             bestCell = map->cells[i];
 
-    // Mutate cells
-    for (int i = 1; i < CELL_COUNT; ++i)
-        Cell_mutate(map->cells[i], bestCell, 0.2f, 0.05f);
+    if (bestCell->score > map->maxScore)
+        map->maxScore = bestCell->score;
 
-    // Reset cells state
-    for (int i = 0; i < CELL_COUNT; ++i)
-        Cell_reset(map->cells[i]);
+    // Reset & mutate firsts cells state
+    int revived = 0;
+    while (revived < CELL_INIT)
+    {
+        int bestIndex = -1;
+        int bestScore = -1;
+        for (int i = 0; i < map->cellCount; ++i)
+        {
+            if (map->cells[i] == NULL)
+                continue;
+
+            if (!map->cells[i]->isAlive && map->cells[i]->score > bestScore)
+            {
+                bestIndex = i;
+                bestScore = map->cells[i]->score;
+            }
+        }
+        if (bestIndex == -1)
+        {
+            fprintf(stderr, "Error while reviving cells !\n");
+            return;
+        }
+        Cell_reset(map->cells[bestIndex]);
+        Cell_mutate(map->cells[bestIndex], bestCell, 0.2f, 0.4f);
+        revived++;
+    }
+
+    // Reset foods state
+    for (int i = 0; i < FOOD_COUNT; ++i)
+        Food_reset(map->foods[i], map);
 
     map->frames = 1;
     map->generation++;
@@ -199,13 +231,14 @@ void Game_reset(Map *map)
 
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
-        // Render walls
-        for (int i = 0; i < 4; ++i)
-            Wall_render(map->walls[i], renderer);
+        // Render foods
+        for (int i = 0; i < FOOD_COUNT; ++i)
+            Food_render(map->foods[i], renderer, map->renderText);
 
         // Render cells
-        for (int i = 0; i < CELL_COUNT; ++i)
-            Cell_render(map->cells[i], renderer);
+        for (int i = 0; i < map->cellCount; ++i)
+            if (map->cells[i] != NULL)
+                Cell_render(map->cells[i], renderer, map->renderRays);
 }
 
 void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
@@ -213,31 +246,29 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
     char message[100];
 
     time_t currentTime = time(NULL) - map->startTime;
-    sprintf(message, "Time: %dm %ds", (int)(currentTime / 60), (int)(currentTime % 60));
+    sprintf(message, "Time: %dm %ds (Frame %d)", (int)(currentTime / 60), (int)(currentTime % 60), map->frames % 1000);
     stringRGBA(renderer, 100, 25, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Generation: %d (Frame %d/1000)", map->generation, map->frames % 1000);
+    Cell *oldestCell = map->cells[1];
+    for (int i = 1; i < map->cellCount; ++i)
+        if (map->cells[i] != NULL && map->cells[i]->generation > oldestCell->generation)
+            oldestCell = map->cells[i];
+    sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, oldestCell->generation);
     stringRGBA(renderer, 100, 50, message, color.r, color.g, color.b, color.a);
 
     int aliveCount = 0;
-    for (int i = 0; i < CELL_COUNT; ++i)
-        if (map->cells[i]->isAlive)
+    for (int i = 0; i < map->cellCount; ++i)
+        if (map->cells[i] != NULL && map->cells[i]->isAlive)
             aliveCount++;
-    sprintf(message, "Cells count: %d (alive: %d)", CELL_COUNT, aliveCount);
+    sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
     stringRGBA(renderer, 100, 75, message, color.r, color.g, color.b, color.a);
 
     Cell *bestCell = map->cells[1];
-    for (int i = 2; i < CELL_COUNT; ++i)
-        if (map->cells[i]->score > bestCell->score)
+    for (int i = 2; i < map->cellCount; ++i)
+        if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
             bestCell = map->cells[i];
-    float averageScore = 0.0f;
-    for (int i = 1; i < CELL_COUNT; ++i)
-        averageScore += map->cells[i]->score;
     sprintf(message, "Best score: %d (max: %d)", bestCell->score, map->maxScore);
     stringRGBA(renderer, 100, 100, message, color.r, color.g, color.b, color.a);
-
-    sprintf(message, "Average score: %d (max: %d)", (int)(averageScore / (CELL_COUNT - 1)), map->maxAverageScore);
-    stringRGBA(renderer, 100, 125, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
     stringRGBA(renderer, 500, 25, message, color.r, color.g, color.b, color.a);

@@ -11,14 +11,19 @@ Cell *Cell_init(int x, int y, bool isAI)
     }
 
     cell->isAI = isAI;
+    cell->maxScore = 100;
     cell->positionInit.x = x;
     cell->positionInit.y = y;
-
-    cell->angleVelocity = 4.0f;
+    cell->healthInit = 20;
+    cell->healthMax = 50;
+    cell->framePerHealth = 30;
+    cell->birthCostMax = 5;
+    cell->generation = 1;
 
     cell->speedMin = -2.0f;
     cell->speedMax = 3.0f;
     cell->velocity = 0.4f;
+    cell->angleVelocity = 4.0f;
 
     cell->radius = 10;
     cell->color = COLOR_BLUE;
@@ -36,7 +41,7 @@ Cell *Cell_init(int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {7, 50, 20, 4};
+    int topology[] = {8, 20, 10, 4};
     cell->nn = createNeuralNetwork(topology, 4);
     setRandomWeights(cell->nn, -1, 1);
 
@@ -48,16 +53,26 @@ void Cell_update(Cell *cell, Map *map)
     if (!cell->isAlive)
         return;
 
+    // Update health
+    cell->frame++;
+    if (cell->frame % cell->framePerHealth == 0)
+    {
+        cell->health--;
+        if (cell->health <= 0)
+            cell->isAlive = false;
+    }
+
     if (cell->isAI)
     {
         double inputs[] = {
-            cell->rays[0].distance / cell->rays[0].distanceMax,
-            cell->rays[1].distance / cell->rays[1].distanceMax,
-            cell->rays[2].distance / cell->rays[2].distanceMax,
-            cell->rays[3].distance / cell->rays[3].distanceMax,
-            cell->rays[4].distance / cell->rays[4].distanceMax,
-            cell->rays[5].distance / cell->rays[5].distanceMax,
-            cell->rays[6].distance / cell->rays[6].distanceMax
+            (double)(cell->health / cell->healthMax),
+            (double)(cell->rays[0].distance / cell->rays[0].distanceMax),
+            (double)(cell->rays[1].distance / cell->rays[1].distanceMax),
+            (double)(cell->rays[2].distance / cell->rays[2].distanceMax),
+            (double)(cell->rays[3].distance / cell->rays[3].distanceMax),
+            (double)(cell->rays[4].distance / cell->rays[4].distanceMax),
+            (double)(cell->rays[5].distance / cell->rays[5].distanceMax),
+            (double)(cell->rays[6].distance / cell->rays[6].distanceMax)
         };
         double outputs[4];
         processInputs(cell->nn, inputs, outputs);
@@ -108,28 +123,52 @@ void Cell_update(Cell *cell, Map *map)
     cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180.0f);
     cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180.0f);
 
-    // Check cell collision with walls
-    for (int i = 0; i < 4; i++)
+    // Cell out of bounds
+    if (cell->position.x < 0.0f)
+        cell->position.x = map->width;
+    else if (cell->position.x > map->width)
+        cell->position.x = 0.0f;
+    if (cell->position.y < 0.0f)
+        cell->position.y = map->height;
+    else if (cell->position.y > map->height)
+        cell->position.y = 0.0f;
+
+    // Check cell collision with foods
+    if (cell->frame % 10 == 0)
     {
-        if (check_rect_collision(cell, &map->walls[i]->rect))
+        for (int i = 0; i < FOOD_COUNT; i++)
         {
-            cell->isAlive = false;
-            break;
+            float distance = sqrt(pow(cell->position.x - map->foods[i]->rect.x, 2) + pow(cell->position.y - map->foods[i]->rect.y, 2));
+            if (distance < cell->radius + map->foods[i]->rect.w)
+            {
+                if (cell->health < cell->healthMax)
+                {
+                    if (cell->score < cell->maxScore)
+                        cell->score++;
+                    cell->health++;
+                    map->foods[i]->value--;
+                    if (map->foods[i]->value <= 0)
+                    {
+                        map->foods[i]->value = 20;
+                        map->foods[i]->rect.x = rand() % (map->width - 100) + 50;
+                        map->foods[i]->rect.y = rand() % (map->height - 100) + 50;
+                    }
+
+                    // New cell
+                    if (cell->score % cell->birthCostMax == 0)
+                        Cell_GiveBirth(cell, map);
+                }
+            }
         }
     }
-
-    // Get score
-    cell->score = (int)cell->position.x - 50;
-    if (!cell->isAlive)
-        cell->score = 0;
 
     // Calculate rays
     for (int i = 0; i < 7; i++)
     {
         float distance = cell->rays[i].distanceMax;
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < FOOD_COUNT; j++)
         {
-            float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
+            float newDistance = check_ray_collision(cell, &map->foods[j]->rect, i);
             if (newDistance < distance)
                 distance = newDistance;
             if (newDistance < 0.0f)
@@ -143,102 +182,91 @@ void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationPro
 {
     // Mutate NeuralNetwork
     mutateNeuralNetwork(cell->nn, parent->nn, mutationRate, mutationProbability);
-
-    if (cell->score < 100) {
-        for (int i = 0; i < 10; ++i)
-            mutateNeuralNetwork(cell->nn, parent->nn, mutationRate, mutationProbability);
-    }
-
-    // Mutate color
-    if (Utils_rand(0, 10) < 5)
-    {
-        cell->color.r += 1;
-        cell->color.g += 1;
-        cell->color.b += 1;
-        if (cell->color.r == 0)
-            cell->color.r = 255;
-        if (cell->color.g == 0)
-            cell->color.g = 255;
-        if (cell->color.b == 0)
-            cell->color.b = 255;
-    }
-    else
-    {
-        cell->color.r -= 1;
-        cell->color.g -= 1;
-        cell->color.b -= 1;
-        if (cell->color.r == 255)
-            cell->color.r = 0;
-        if (cell->color.g == 255)
-            cell->color.g = 0;
-        if (cell->color.b == 255)
-            cell->color.b = 0;
-    }
 }
 
-void Cell_render(Cell *cell, SDL_Renderer *renderer)
+void Cell_GiveBirth(Cell *cell, Map *map)
 {
-    if (!cell->isAlive)
+    int index = -1;
+    for (int i = 1; i < CELL_COUNT; i++)
     {
-        // Render dead cell
-        SDL_SetRenderDrawColor(renderer,
-                                 COLOR_RED.r,
-                                 COLOR_RED.g,
-                                 COLOR_RED.b,
-                                 COLOR_RED.a);
+        if (map->cells[i] != NULL && !map->cells[i]->isAlive)
+        {
+            index = i;
+            Cell_destroy(map->cells[i]);
+            break;
+        }
+    }
 
-        // Render filled circle
-        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+    if (index == -1 && map->cellCount < CELL_COUNT)
+    {
+        index = map->cellCount++;
+    }
+
+    if (index == -1)
+    {
+        printf("No more space for new cells !\n");
         return;
     }
 
+    Cell *newCell = Cell_init(cell->positionInit.x, cell->positionInit.y, true);
+    newCell->position.x = cell->position.x;
+    newCell->position.y = cell->position.y;
+    newCell->generation = cell->generation + 1;
+    Cell_mutate(newCell, cell, 1.0f, 0.2f);
+    map->cells[index] = newCell;
+}
+
+void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays)
+{
+    if (!cell->isAlive)
+        return;
+
     // Set renderer color to cell color
     SDL_SetRenderDrawColor(renderer,
-                           cell->color.r,
+                           255 * (1 - (float)cell->health / (float)cell->healthInit),
                            cell->color.g,
-                           cell->color.b,
+                           255 * ((float)cell->health / (float)cell->healthInit),
                            cell->color.a);
 
     // Render filled circle
     SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
 
-    // if dead, not render smile & rays
-    if (!cell->isAlive)
-        return;
-
     // Render rays
-    for (int i = 0; i < 7; i++)
+    if (renderRays)
     {
-        // Set renderer color to ray color
-        if (cell->rays[i].distance < cell->rays[i].distanceMax)
+        for (int i = 0; i < 7; i++)
         {
-            SDL_SetRenderDrawColor(renderer,
-                                   COLOR_RED.r,
-                                   COLOR_RED.g,
-                                   COLOR_RED.b,
-                                   COLOR_RED.a);
-        }
-        else
-        {
-            SDL_SetRenderDrawColor(renderer,
-                                   COLOR_WHITE.r,
-                                   COLOR_WHITE.g,
-                                   COLOR_WHITE.b,
-                                   COLOR_WHITE.a);
-        }
+            // Set renderer color to ray color
+            if (cell->rays[i].distance < cell->rays[i].distanceMax)
+            {
+                SDL_SetRenderDrawColor(renderer,
+                                    COLOR_RED.r,
+                                    COLOR_RED.g,
+                                    COLOR_RED.b,
+                                    COLOR_RED.a);
+            }
+            else
+            {
+                SDL_SetRenderDrawColor(renderer,
+                                    COLOR_WHITE.r,
+                                    COLOR_WHITE.g,
+                                    COLOR_WHITE.b,
+                                    COLOR_WHITE.a);
+            }
 
-        // Render ray
-        SDL_RenderDrawLine(renderer,
-                           cell->position.x,
-                           cell->position.y,
-                           cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                           cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
+            // Render ray
+            SDL_RenderDrawLine(renderer,
+                            cell->position.x,
+                            cell->position.y,
+                            cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                            cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
 
-        // Render ray intersection
-        SDL_RenderFillCircle(renderer,
-                             cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                             cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                             2);
+            // Render ray intersection
+            SDL_RenderFillCircle(renderer,
+                                cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                                cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                                2);
+        }
     }
 
     // Draw a smiley face with the cell angle
@@ -271,12 +299,21 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer)
 
     // Draw mouth
     SDL_RenderDrawArc(renderer, mouthX, mouthY, mouthRadius, mouthStartAngle, mouthEndAngle);
+
+    // Draw health bar
+    SDL_SetRenderDrawColor(renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
+    SDL_RenderDrawRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2, 5});
+    SDL_SetRenderDrawColor(renderer, COLOR_GREEN.r, COLOR_GREEN.g, COLOR_GREEN.b, COLOR_GREEN.a);
+    SDL_RenderFillRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2 * (float)cell->health / (float)cell->healthMax, 5});
 }
 
 void Cell_reset(Cell *cell)
 {
     cell->isAlive = true;
     cell->score = 0;
+    cell->health = cell->healthInit;
+    cell->frame = 0;
+    cell->generation = 1;
 
     cell->position.x = cell->positionInit.x;
     cell->position.y = cell->positionInit.y;

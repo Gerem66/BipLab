@@ -63,16 +63,15 @@ void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutati
         NeuralLayer *layer = nn->layers[i];
         NeuralLayer *parentLayer = parent->layers[i];
         for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++) {
-            double delta = parentLayer->weights[j] - layer->weights[j];
-            double mutation = delta * mutationRate;
-            layer->weights[j] += mutation;
-            if (rand() / (double)RAND_MAX < mutationProbability) {
-                layer->weights[j] += randomWeight(-0.1, 0.1);
+            if (rand() / (double)RAND_MAX < mutationProbability)
+            {
+                layer->weights[j] = randomWeight(-1, 1);
             }
-            if (layer->weights[j] < -1.0) {
-                layer->weights[j] = -1.0;
-            } else if (layer->weights[j] > 1.0) {
-                layer->weights[j] = 1.0;
+            else
+            {
+                double delta = parentLayer->weights[j] - layer->weights[j];
+                double mutation = delta * mutationRate;
+                layer->weights[j] += mutation;
             }
         }
     }

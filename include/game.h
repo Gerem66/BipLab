@@ -11,22 +11,28 @@
 typedef struct Map Map;
 
 #include "cell.h"
-#include "wall.h"
+#include "food.h"
 
-#define CELL_COUNT 100
+#define CELL_INIT 20
+#define CELL_COUNT 1000
+#define FOOD_COUNT 10
 
 
 struct Map
 {
+    int width;
+    int height;
     time_t startTime;
     Cell *cells[CELL_COUNT];
-    Wall *walls[4];
+    Food *foods[FOOD_COUNT];
+    int cellCount;
     int generation;
     int frames;
     int maxScore;
-    int maxAverageScore;
     bool isRunning;
     bool verticalSync;
+    bool renderText;
+    bool renderRays;
     bool renderEnabled;
 };
 
