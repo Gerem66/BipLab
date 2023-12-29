@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL.h>
+#include <SDL2/SDL_image.h>
 
 typedef struct Ray Ray;
 typedef struct Cell Cell;
@@ -26,7 +27,6 @@ struct Cell
 {
     bool isAlive;
     int score; // eatenFood
-    int maxScore;
     Ray rays[7];
     int generation;
 
@@ -39,6 +39,8 @@ struct Cell
 
     bool isAI;
     NeuralNetwork *nn;
+    double inputs[10];
+    double outputs[4];
 
     SDL_FPoint position;
     SDL_FPoint positionInit;
@@ -58,6 +60,7 @@ struct Cell
 
     int radius;
     SDL_Color color;
+    SDL_Surface *sprite;
 };
 
 
@@ -65,7 +68,7 @@ Cell *Cell_init(int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);
-void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays);
+void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected);
 void Cell_reset(Cell *cell);
 void Cell_destroy(Cell *cell);
 

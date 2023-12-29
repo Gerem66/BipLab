@@ -36,9 +36,11 @@ float GetMillisecondsElapsed();
 
 void Utils_randInit();
 int Utils_rand(int min, int max);
+float Utils_map(float value, float min1, float max1, float min2, float max2);
 float Utils_randomFloat(float min, float max);
 
 void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius);
 void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle);
+void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius);
 
 #endif // UTILS_H

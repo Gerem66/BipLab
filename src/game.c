@@ -7,12 +7,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.height = h;
     map.startTime = time(NULL);
     map.generation = 1;
+    map.maxGeneration = 1;
     map.frames = 1;
     map.maxScore = 0;
     map.isRunning = true;
     map.verticalSync = true;
     map.renderText = true;
     map.renderRays = false;
+    map.renderNeuralNetwork = false;
     map.renderEnabled = true;
     map.cellCount = 0;
 
@@ -93,6 +95,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                     case SDLK_d:
                         map.cells[0]->goingRight = true;
                         break;
+                    case SDLK_n:
+                        map.renderNeuralNetwork = !map.renderNeuralNetwork;
+                        break;
                     case SDLK_r:
                         //Game_reset(&map);
                         break;
@@ -151,6 +156,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);
         if (map.renderEnabled)
             Game_render(renderer, &map);
+
+        // Render neural network
+        if (map.renderNeuralNetwork)
+        {
+            int index = 1;
+            if (map.cells[index] != NULL)
+                NeuralNetwork_Render(map.cells[index], renderer, index, 600, 300, 200, 300);
+        }
 
         // Check generation
         bool allDead = true;
@@ -217,7 +230,7 @@ void Game_reset(Map *map)
             return;
         }
         Cell_reset(map->cells[bestIndex]);
-        Cell_mutate(map->cells[bestIndex], bestCell, 0.2f, 0.4f);
+        //Cell_mutate(map->cells[bestIndex], bestCell, 0.2f, 0.4f);
         revived++;
     }
 
@@ -231,14 +244,14 @@ void Game_reset(Map *map)
 
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
-        // Render foods
-        for (int i = 0; i < FOOD_COUNT; ++i)
-            Food_render(map->foods[i], renderer, map->renderText);
+    // Render foods
+    for (int i = 0; i < FOOD_COUNT; ++i)
+        Food_render(map->foods[i], renderer, map->renderText);
 
-        // Render cells
-        for (int i = 0; i < map->cellCount; ++i)
-            if (map->cells[i] != NULL)
-                Cell_render(map->cells[i], renderer, map->renderRays);
+    // Render cells
+    for (int i = 0; i < map->cellCount; ++i)
+        if (map->cells[i] != NULL)
+            Cell_render(map->cells[i], renderer, map->renderRays, i == 1);
 }
 
 void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
@@ -253,7 +266,9 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
     for (int i = 1; i < map->cellCount; ++i)
         if (map->cells[i] != NULL && map->cells[i]->generation > oldestCell->generation)
             oldestCell = map->cells[i];
-    sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, oldestCell->generation);
+    if (oldestCell->generation > map->maxGeneration)
+        map->maxGeneration = oldestCell->generation;
+    sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, map->maxGeneration);
     stringRGBA(renderer, 100, 50, message, color.r, color.g, color.b, color.a);
 
     int aliveCount = 0;
@@ -281,22 +296,4 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
 
     sprintf(message, "Score: %d", map->cells[0]->score);
     stringRGBA(renderer, 500, 100, message, color.r, color.g, color.b, color.a);
-
-    // Show neural netword values of each layers
-    if (bestCell->isAI)
-    {
-        float x = 50.0f;
-        float y = 450.0f;
-        for (int i = 0; i < bestCell->nn->topologySize - 1; ++i)
-        {
-            sprintf(message, "Layer %d:", i);
-            stringRGBA(renderer, x, y + i * 25, message, color.r, color.g, color.b, color.a);
-
-            for (int j = 0; j < bestCell->nn->layers[i]->nextLayerNeuronCount; ++j)
-            {
-                sprintf(message, "%f", bestCell->nn->layers[i]->weights[j]);
-                stringRGBA(renderer, x + 100 * (j + 1), y + i * 25, message, color.r, color.g, color.b, color.a);
-            }
-        }
-    }
 }

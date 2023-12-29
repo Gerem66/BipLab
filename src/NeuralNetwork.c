@@ -94,3 +94,80 @@ void freeNeuralNetwork(NeuralNetwork *nn) {
     free(nn->topology);
     free(nn);
 }
+
+// By ChatGPT
+void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, int y, int w, int h)
+{
+    // Assurez-vous que cell et cell->nn ne sont pas NULL.
+    if (cell == NULL || cell->nn == NULL) {
+        return;
+    }
+
+    // Show index of cell
+    char indexText[10];
+    sprintf(indexText, "%d", index);
+    SDL_Color color = { 255, 255, 255, 255 };
+    stringRGBA(renderer, x, y, indexText, color.r, color.g, color.b, color.a);
+
+    NeuralNetwork *nn = cell->nn;
+    int layerCount = nn->topologySize - 1;
+
+    // Calculez l'espacement entre les layers et les neurones.
+    int layerSpacing = w / (layerCount + 2);
+    int maxNeurons = 0;
+    for (int i = 0; i < nn->topologySize - 1; i++) {
+        if (nn->topology[i] > maxNeurons) {
+            maxNeurons = nn->topology[i];
+        }
+    }
+    int neuronSpacing = h / (maxNeurons + 1);
+
+    // Dessinez les layers et les neurones.
+    for (int i = 0; i < layerCount; i++) {
+        int layerX = x + (i + 1) * layerSpacing;
+        for (int j = 0; j < nn->topology[i]; j++) {
+            int neuronY = y + (j + 1) * neuronSpacing;
+            int nextLayerNeuronCount = (i < layerCount - 1) ? nn->topology[i + 1] : 0;
+
+            // Dessinez les liaisons.
+            if (i < layerCount - 1) {
+                for (int k = 0; k < nextLayerNeuronCount; k++) {
+                    int nextNeuronY = y + (k + 1) * neuronSpacing;
+                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 50);
+                    SDL_RenderDrawLine(renderer, layerX, neuronY, layerX + layerSpacing, nextNeuronY);
+                }
+            }
+
+            // Dessinez le neurone.
+            int opacity = (int)(255 * fabs(nn->layers[i]->weights[j]));
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, opacity);
+            if (!cell->isAlive)
+                SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+            SDL_RenderDrawCircle(renderer, layerX, neuronY, 10);
+        }
+    }
+
+    // Dessinez les inputs.
+    // Ajustez selon la façon dont vous voulez afficher les inputs.
+    for (int i = 0; i < nn->topology[0]; i++) {
+        int inputX = x;
+        int inputY = y + (i + 1) * neuronSpacing;
+        Uint8 opacity = cell->inputs[i] * 255;
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, opacity);
+        if (!cell->isAlive)
+            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+        SDL_RenderDrawCircle(renderer, inputX, inputY, 10);
+    }
+
+    // Dessinez les outputs.
+    // Ajustez selon la façon dont vous voulez afficher les outputs.
+    for (int i = 0; i < nn->layers[layerCount - 1]->nextLayerNeuronCount; i++) {
+        int outputX = x + (layerCount + 1) * layerSpacing;
+        int outputY = y + (i + 1) * neuronSpacing;
+        Uint8 opacity = cell->outputs[i] > 0.5 ? 255 : 125;
+        SDL_SetRenderDrawColor(renderer, 0, 0, 255, opacity);
+        if (!cell->isAlive)
+            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+        SDL_RenderDrawCircle(renderer, outputX, outputY, 10);
+    }
+}

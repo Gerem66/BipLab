@@ -14,7 +14,7 @@ Food *Food_init(float x, float y)
     food->rect.y = y;
     food->rect.w = 10;
     food->rect.h = 10;
-    food->value = 50;
+    food->value = 20;
     food->color = COLOR_YELLOW;
 
     return food;

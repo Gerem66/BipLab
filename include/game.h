@@ -13,7 +13,7 @@ typedef struct Map Map;
 #include "cell.h"
 #include "food.h"
 
-#define CELL_INIT 20
+#define CELL_INIT 30
 #define CELL_COUNT 1000
 #define FOOD_COUNT 10
 
@@ -27,12 +27,14 @@ struct Map
     Food *foods[FOOD_COUNT];
     int cellCount;
     int generation;
+    int maxGeneration;
     int frames;
     int maxScore;
     bool isRunning;
     bool verticalSync;
     bool renderText;
     bool renderRays;
+    bool renderNeuralNetwork;
     bool renderEnabled;
 };
 

@@ -11,14 +11,12 @@ Cell *Cell_init(int x, int y, bool isAI)
     }
 
     cell->isAI = isAI;
-    cell->maxScore = 100;
     cell->positionInit.x = x;
     cell->positionInit.y = y;
     cell->healthInit = 20;
     cell->healthMax = 50;
-    cell->framePerHealth = 30;
-    cell->birthCostMax = 5;
-    cell->generation = 1;
+    cell->framePerHealth = 60;
+    cell->birthCostMax = 15;
 
     cell->speedMin = -2.0f;
     cell->speedMax = 3.0f;
@@ -38,11 +36,20 @@ Cell *Cell_init(int x, int y, bool isAI)
         cell->rays[i].distanceMax = 100.0f;
     }
 
+    // Load sprite
+    cell->sprite = IMG_Load("../ressources/cell.png");
+    if (cell->sprite == NULL)
+    {
+        printf("Erreur de chargement de l'image : %s", SDL_GetError());
+        free(cell);
+        return NULL;
+    }
+
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {8, 20, 10, 4};
-    cell->nn = createNeuralNetwork(topology, 4);
+    int topology[] = {8, 5, 4};
+    cell->nn = createNeuralNetwork(topology, 3);
     setRandomWeights(cell->nn, -1, 1);
 
     return cell;
@@ -64,23 +71,20 @@ void Cell_update(Cell *cell, Map *map)
 
     if (cell->isAI)
     {
-        double inputs[] = {
-            (double)(cell->health / cell->healthMax),
-            (double)(cell->rays[0].distance / cell->rays[0].distanceMax),
-            (double)(cell->rays[1].distance / cell->rays[1].distanceMax),
-            (double)(cell->rays[2].distance / cell->rays[2].distanceMax),
-            (double)(cell->rays[3].distance / cell->rays[3].distanceMax),
-            (double)(cell->rays[4].distance / cell->rays[4].distanceMax),
-            (double)(cell->rays[5].distance / cell->rays[5].distanceMax),
-            (double)(cell->rays[6].distance / cell->rays[6].distanceMax)
-        };
-        double outputs[4];
-        processInputs(cell->nn, inputs, outputs);
+        cell->inputs[0] = (double)cell->health / (double)cell->healthMax,
+        cell->inputs[1] = (double)(1 - cell->rays[0].distance / cell->rays[0].distanceMax);
+        cell->inputs[2] = (double)(1 - cell->rays[1].distance / cell->rays[1].distanceMax);
+        cell->inputs[3] = (double)(1 - cell->rays[2].distance / cell->rays[2].distanceMax);
+        cell->inputs[4] = (double)(1 - cell->rays[3].distance / cell->rays[3].distanceMax);
+        cell->inputs[5] = (double)(1 - cell->rays[4].distance / cell->rays[4].distanceMax);
+        cell->inputs[6] = (double)(1 - cell->rays[5].distance / cell->rays[5].distanceMax);
+        cell->inputs[7] = (double)(1 - cell->rays[6].distance / cell->rays[6].distanceMax);
+        processInputs(cell->nn, cell->inputs, cell->outputs);
 
-        cell->goingUp = outputs[0] > 0.5;
-        cell->goingDown = outputs[1] > 0.5;
-        cell->goingLeft = outputs[2] > 0.5;
-        cell->goingRight = outputs[3] > 0.5;
+        cell->goingUp = cell->outputs[0] > 0.5;
+        cell->goingDown = cell->outputs[1] > 0.5;
+        cell->goingLeft = cell->outputs[2] > 0.5;
+        cell->goingRight = cell->outputs[3] > 0.5;
     }
 
     // Update angle
@@ -143,8 +147,7 @@ void Cell_update(Cell *cell, Map *map)
             {
                 if (cell->health < cell->healthMax)
                 {
-                    if (cell->score < cell->maxScore)
-                        cell->score++;
+                    cell->score++;
                     cell->health++;
                     map->foods[i]->value--;
                     if (map->foods[i]->value <= 0)
@@ -186,14 +189,18 @@ void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationPro
 
 void Cell_GiveBirth(Cell *cell, Map *map)
 {
+    // Priorize lower scores
     int index = -1;
+    int minValue =-1;
     for (int i = 1; i < CELL_COUNT; i++)
     {
-        if (map->cells[i] != NULL && !map->cells[i]->isAlive)
+        if (map->cells[i] == NULL || map->cells[i]->isAlive)
+            continue;
+
+        if (map->cells[i]->score < minValue || minValue == -1)
         {
             index = i;
-            Cell_destroy(map->cells[i]);
-            break;
+            minValue = map->cells[i]->score;
         }
     }
 
@@ -212,11 +219,14 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;
-    Cell_mutate(newCell, cell, 1.0f, 0.2f);
+    Cell_mutate(newCell, cell, 0.7f, 0.1f);
+
+    if (map->cells[index] != NULL)
+        Cell_destroy(map->cells[index]);
     map->cells[index] = newCell;
 }
 
-void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays)
+void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected)
 {
     if (!cell->isAlive)
         return;
@@ -228,8 +238,11 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays)
                            255 * ((float)cell->health / (float)cell->healthInit),
                            cell->color.a);
 
+    if (isSelected)
+        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
+
     // Render filled circle
-    SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+    //SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
 
     // Render rays
     if (renderRays)
@@ -305,6 +318,19 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays)
     SDL_RenderDrawRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2, 5});
     SDL_SetRenderDrawColor(renderer, COLOR_GREEN.r, COLOR_GREEN.g, COLOR_GREEN.b, COLOR_GREEN.a);
     SDL_RenderFillRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2 * (float)cell->health / (float)cell->healthMax, 5});
+
+    // Draw sprite
+    int radius = cell->radius * 1.5;
+    int angle = cell->angle + 90;
+    SDL_Texture* sprite = SDL_CreateTextureFromSurface(renderer, cell->sprite);
+    SDL_Rect positionFond = {
+        cell->position.x - radius,
+        cell->position.y - radius,
+        radius * 2,
+        radius * 2
+    };
+    SDL_RenderCopyEx(renderer, sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
+    SDL_DestroyTexture(sprite);
 }
 
 void Cell_reset(Cell *cell)
@@ -328,6 +354,7 @@ void Cell_reset(Cell *cell)
 
 void Cell_destroy(Cell *cell)
 {
+    SDL_FreeSurface(cell->sprite);
     freeNeuralNetwork(cell->nn);
     free(cell);
 }

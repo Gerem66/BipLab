@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
         }
         else
         {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
             // Start the game
             Game_start(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 

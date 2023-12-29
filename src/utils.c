@@ -52,6 +52,11 @@ int Utils_rand(int min, int max)
     return (rand() % (max + 1)) + min;
 }
 
+float Utils_map(float value, float min1, float max1, float min2, float max2)
+{
+	return (value - min1) / (max1 - min1) * (max2 - min2) + min2;
+}
+
 float Utils_randomFloat(float min, float max)
 {
 	return ((float)rand() / (float)RAND_MAX) * (max - min) + min;
@@ -81,6 +86,7 @@ void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius)
 	}
 }
 
+// By ChatGPT
 void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle) {
     // Conversion des angles en radians
     double startRad = startAngle * (PI / 180.0);
@@ -95,5 +101,18 @@ void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int start
         int y = y0 + radius * sin(theta);
 
         SDL_RenderDrawPoint(rend, x, y);
+    }
+}
+
+// By ChatGPT
+void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius) {
+    for (int w = 0; w < radius * 2; w++) {
+        for (int h = 0; h < radius * 2; h++) {
+            int dx = radius - w;
+            int dy = radius - h;
+            if ((dx*dx + dy*dy) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, x + dx, y + dy);
+            }
+        }
     }
 }
