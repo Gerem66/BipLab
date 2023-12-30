@@ -314,7 +314,7 @@ void Game_reset(Map *map)
             return;
         }
         Cell_reset(map->cells[bestIndex]);
-        Cell_mutate(map->cells[bestIndex], bestCell, 1.0f, 0.25f);
+        Cell_mutate(map->cells[bestIndex], bestCell, 0.6f, 1.0f);
         revived++;
     }
 

@@ -65,7 +65,7 @@ void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutati
         for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++) {
             if (rand() / (double)RAND_MAX < mutationProbability)
             {
-                layer->weights[j] = randomWeight(-1, 1);
+                layer->weights[j] = MIN(1, MAX(-1, layer->weights[j] + randomWeight(-0.1f, 0.1f)));
             }
             else
             {
@@ -104,8 +104,8 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
     }
 
     // Show index of cell
-    char indexText[10];
-    sprintf(indexText, "%d", index);
+    char indexText[50];
+    sprintf(indexText, "Best cell: %d, with score: %d", index, cell->score);
     SDL_Color color = { 255, 255, 255, 255 };
     stringRGBA(renderer, x, y, indexText, color.r, color.g, color.b, color.a);
 
@@ -133,14 +133,29 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
             if (i < layerCount - 1) {
                 for (int k = 0; k < nextLayerNeuronCount; k++) {
                     int nextNeuronY = y + (k + 1) * neuronSpacing;
-                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 50);
+                    int neuronWeightIndex = j * nextLayerNeuronCount + k;
+                    float weight = nn->layers[i]->weights[neuronWeightIndex];
+                    int opacity = (int)(255.0f * fabs(weight) / 10.0f);
+                    if (weight < 0)
+                    {
+                        SDL_SetRenderDrawColor(renderer, 255, 0, 0, opacity);
+                        if (!cell->isAlive)
+                            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+                    }
+                    else
+                    {
+                        SDL_SetRenderDrawColor(renderer, 0, 255, 0, opacity);
+                        if (!cell->isAlive)
+                            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+                    }
+                    //SDL_SetRenderDrawColor(renderer, 128, 128, 128, 50);
                     SDL_RenderDrawLine(renderer, layerX, neuronY, layerX + layerSpacing, nextNeuronY);
                 }
             }
 
             // Dessinez le neurone.
             int opacity = (int)(255 * fabs(nn->layers[i]->weights[j]));
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, opacity);
+            SDL_SetRenderDrawColor(renderer, 0, 200, 161, opacity);
             if (!cell->isAlive)
                 SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
             SDL_RenderDrawCircle(renderer, layerX, neuronY, 10);
@@ -153,10 +168,24 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
         int inputX = x;
         int inputY = y + (i + 1) * neuronSpacing;
         Uint8 opacity = cell->inputs[i] * 255;
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, opacity);
+
+        // Draw outline
+        if (opacity == 0)
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 180, 53, 125);
+            if (!cell->isAlive)
+                SDL_SetRenderDrawColor(renderer, 125, 125, 125, 125);
+            SDL_RenderDrawCircleOutline(renderer, inputX, inputY, 10);
+        }
+
+        SDL_SetRenderDrawColor(renderer, 255, 180, 53, opacity);
         if (!cell->isAlive)
             SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
         SDL_RenderDrawCircle(renderer, inputX, inputY, 10);
+
+        // Dessinez les liaisons.
+        SDL_SetRenderDrawColor(renderer, 128, 128, 128, 50);
+        SDL_RenderDrawLine(renderer, inputX, inputY, inputX + layerSpacing, inputY);
     }
 
     // Dessinez les outputs.
@@ -165,9 +194,31 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
         int outputX = x + (layerCount + 1) * layerSpacing;
         int outputY = y + (i + 1) * neuronSpacing;
         Uint8 opacity = cell->outputs[i] > 0.5 ? 255 : 125;
-        SDL_SetRenderDrawColor(renderer, 0, 0, 255, opacity);
+        SDL_SetRenderDrawColor(renderer, 125, 125, 255, opacity);
         if (!cell->isAlive)
             SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
         SDL_RenderDrawCircle(renderer, outputX, outputY, 10);
+
+        // Dessinez les liaisons.
+        SDL_SetRenderDrawColor(renderer, 128, 128, 128, 50);
+        for (int j = 0; j < nn->topology[layerCount - 1]; j++) {
+            int nextNeuronY = y + (j + 1) * neuronSpacing;
+            int neuronWeightIndex = i * nn->topology[layerCount - 1] + j;
+            float weight = nn->layers[layerCount - 1]->weights[neuronWeightIndex];
+            int opacity = (int)(255.0f * fabs(weight) / 10.0f);
+            if (weight < 0)
+            {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, opacity);
+                if (!cell->isAlive)
+                    SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+            }
+            else
+            {
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, opacity);
+                if (!cell->isAlive)
+                    SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+            }
+            SDL_RenderDrawLine(renderer, outputX, outputY, outputX - layerSpacing, nextNeuronY);
+        }
     }
 }

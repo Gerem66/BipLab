@@ -15,7 +15,7 @@ Cell *Cell_init(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->positionInit.y = y;
     cell->healthInit = 20;
     cell->healthMax = 50;
-    cell->framePerHealth = 40;
+    cell->framePerHealth = 30;
     cell->birthCostMax = 15;
 
     cell->speedMin = -2.0f;
@@ -43,8 +43,8 @@ Cell *Cell_init(SDL_Texture *sprite, int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {15, 6, 4};
-    cell->nn = createNeuralNetwork(topology, 3);
+    int topology[] = {15, 6, 6, 4};
+    cell->nn = createNeuralNetwork(topology, 4);
     setRandomWeights(cell->nn, -1, 1);
 
     return cell;
@@ -265,7 +265,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;
-    Cell_mutate(newCell, cell, 0.8f, 0.1f);
+    Cell_mutate(newCell, cell, 1.0f, 0.05f);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);

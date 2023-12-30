@@ -117,6 +117,11 @@ void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius) {
     }
 }
 
+void SDL_RenderDrawCircleOutline(SDL_Renderer *renderer, int x, int y, int radius) {
+    SDL_RenderDrawArc(renderer, x, y, radius, 0, 360);
+    SDL_RenderDrawArc(renderer, x, y, radius - 1, 0, 360);
+}
+
 SDL_Texture *LoadSprite(SDL_Renderer *renderer, const char *file)
 {
     // Load cell sprite
