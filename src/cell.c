@@ -34,6 +34,9 @@ Cell *Cell_init(int x, int y, bool isAI)
         cell->rays[i].angle = -PI + i * PI / 3;
         cell->rays[i].distance = 0.0f;
         cell->rays[i].distanceMax = 100.0f;
+        cell->raysWall[i].angle = -PI + i * PI / 3;
+        cell->raysWall[i].distance = 0.0f;
+        cell->raysWall[i].distanceMax = 100.0f;
     }
 
     // Load sprite
@@ -48,7 +51,7 @@ Cell *Cell_init(int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {8, 5, 4};
+    int topology[] = {15, 6, 4};
     cell->nn = createNeuralNetwork(topology, 3);
     setRandomWeights(cell->nn, -1, 1);
 
@@ -79,6 +82,13 @@ void Cell_update(Cell *cell, Map *map)
         cell->inputs[5] = (double)(1 - cell->rays[4].distance / cell->rays[4].distanceMax);
         cell->inputs[6] = (double)(1 - cell->rays[5].distance / cell->rays[5].distanceMax);
         cell->inputs[7] = (double)(1 - cell->rays[6].distance / cell->rays[6].distanceMax);
+        cell->inputs[8] = (double)(1 - cell->raysWall[0].distance / cell->raysWall[0].distanceMax);
+        cell->inputs[9] = (double)(1 - cell->raysWall[1].distance / cell->raysWall[1].distanceMax);
+        cell->inputs[10] = (double)(1 - cell->raysWall[2].distance / cell->raysWall[2].distanceMax);
+        cell->inputs[11] = (double)(1 - cell->raysWall[3].distance / cell->raysWall[3].distanceMax);
+        cell->inputs[12] = (double)(1 - cell->raysWall[4].distance / cell->raysWall[4].distanceMax);
+        cell->inputs[13] = (double)(1 - cell->raysWall[5].distance / cell->raysWall[5].distanceMax);
+        cell->inputs[14] = (double)(1 - cell->raysWall[6].distance / cell->raysWall[6].distanceMax);
         processInputs(cell->nn, cell->inputs, cell->outputs);
 
         cell->goingUp = cell->outputs[0] > 0.5;
@@ -137,10 +147,31 @@ void Cell_update(Cell *cell, Map *map)
     else if (cell->position.y > map->height)
         cell->position.y = 0.0f;
 
+    // Check cell collision with walls
+    for (int i = 0; i < WALL_COUNT; i++)
+    {
+        if (SDL_HasIntersection(
+            &(SDL_Rect) {
+                (int)cell->position.x - cell->radius,
+                (int)cell->position.y - cell->radius,
+                cell->radius * 2,
+                cell->radius * 2
+            },
+            &(SDL_Rect) {
+                map->walls[i]->rect.x,
+                map->walls[i]->rect.y,
+                map->walls[i]->rect.w,
+                map->walls[i]->rect.h
+            }))
+        {
+            cell->isAlive = false;
+        }
+    }
+
     // Check cell collision with foods
     if (cell->frame % 10 == 0)
     {
-        for (int i = 0; i < FOOD_COUNT; i++)
+        for (int i = 0; i < GAME_START_FOOD_COUNT; i++)
         {
             float distance = sqrt(pow(cell->position.x - map->foods[i]->rect.x, 2) + pow(cell->position.y - map->foods[i]->rect.y, 2));
             if (distance < cell->radius + map->foods[i]->rect.w)
@@ -165,11 +196,11 @@ void Cell_update(Cell *cell, Map *map)
         }
     }
 
-    // Calculate rays
+    // Calculate food rays
     for (int i = 0; i < 7; i++)
     {
         float distance = cell->rays[i].distanceMax;
-        for (int j = 0; j < FOOD_COUNT; j++)
+        for (int j = 0; j < GAME_START_FOOD_COUNT; j++)
         {
             float newDistance = check_ray_collision(cell, &map->foods[j]->rect, i);
             if (newDistance < distance)
@@ -178,6 +209,22 @@ void Cell_update(Cell *cell, Map *map)
                 distance = 0.0f;
         }
         cell->rays[i].distance = distance;
+    }
+
+    // Calculate wall rays
+    for (int i = 0; i < 7; i++)
+    {
+        float distance = cell->raysWall[i].distanceMax;
+        for (int j = 0; j < WALL_COUNT; j++)
+        {
+            // Food rays are used to detect walls because they are the same
+            float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
+            if (newDistance < distance)
+                distance = newDistance;
+            if (newDistance < 0.0f)
+                distance = 0.0f;
+        }
+        cell->raysWall[i].distance = distance;
     }
 }
 
@@ -274,10 +321,16 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
                             cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
                             cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
 
-            // Render ray intersection
+            // Render food ray intersection
             SDL_RenderFillCircle(renderer,
                                 cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
                                 cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                                2);
+
+            // Render wall ray intersection
+            SDL_RenderFillCircle(renderer,
+                                cell->position.x + cell->raysWall[i].distance * cos(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
+                                cell->position.y + cell->raysWall[i].distance * sin(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
                                 2);
         }
     }

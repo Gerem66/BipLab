@@ -28,6 +28,7 @@ struct Cell
     bool isAlive;
     int score; // eatenFood
     Ray rays[7];
+    Ray raysWall[7];
     int generation;
 
     int health;
@@ -39,7 +40,7 @@ struct Cell
 
     bool isAI;
     NeuralNetwork *nn;
-    double inputs[10];
+    double inputs[15];
     double outputs[4];
 
     SDL_FPoint position;

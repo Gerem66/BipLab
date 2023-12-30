@@ -14,3 +14,14 @@ Start build & run
 ```bash
 clear && cmake .. && make && ./CellsEvolution
 ```
+
+## Commands
+- Mouse wheel => Zoom/Dezoom & move view
+- n => Show/Hide neural network representation of the best cell
+- r => Go to next generation (disabled)
+- t => Show/Hide texts
+- y => Enable/Disable render of rays
+- i => Enable/Disable render of cells
+- o => Enable/Disable vertical sync
+- p => Pause/Unpause cells evolution
+- Esc => Quit

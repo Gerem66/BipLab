@@ -12,10 +12,16 @@ typedef struct Map Map;
 
 #include "cell.h"
 #include "food.h"
+#include "wall.h"
 
-#define CELL_INIT 30
+// Maximum number in memory
 #define CELL_COUNT 1000
-#define FOOD_COUNT 10
+#define FOOD_COUNT 100
+#define WALL_COUNT 4
+
+// Starting number
+#define GAME_START_CELL_COUNT 30
+#define GAME_START_FOOD_COUNT 10
 
 
 struct Map
@@ -25,6 +31,7 @@ struct Map
     time_t startTime;
     Cell *cells[CELL_COUNT];
     Food *foods[FOOD_COUNT];
+    Wall *walls[WALL_COUNT];
     int cellCount;
     int generation;
     int maxGeneration;

@@ -18,9 +18,30 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.renderEnabled = true;
     map.cellCount = 0;
 
+    // Initialize walls
+    for (int i = 0; i < WALL_COUNT; ++i)
+    {
+        map.walls[i] = Wall_init(0, 0, 50, 50);
+        if (map.walls[i] == NULL)
+        {
+            fprintf(stderr, "Error while initializing wall %d !\n", i);
+            for(int j = 0; j < i; ++j)
+            {
+                Wall_destroy(map.walls[j]);
+            }
+            return false;
+        }
+        Wall_reset(map.walls[i], &map);
+    }
+
     // Initialize foods
     for (int i = 0; i < FOOD_COUNT; ++i)
     {
+        if (i > GAME_START_FOOD_COUNT)
+        {
+            map.foods[i] = NULL;
+            continue;
+        }
         map.foods[i] = Food_init(Utils_rand(0, map.width), Utils_rand(0, map.height));
         if (map.foods[i] == NULL)
         {
@@ -36,7 +57,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     // Initialize cells
     for(int i = 0; i < CELL_COUNT; ++i)
     {
-        if (i > CELL_INIT)
+        if (i > GAME_START_CELL_COUNT)
         {
             map.cells[i] = NULL;
             continue;
@@ -61,6 +82,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
 
     // Event loop exit flag
     bool quit = false;
+
+    // View offset
+    float zoomFactor = 1.0f;
+    float zoomSpeed = 0.2f;
+    int viewOffsetX = 0;
+    int viewOffsetY = 0;
+    int mouseX = 0;
+    int mouseY = 0;
 
     // Event loop
     while (!quit)
@@ -141,6 +170,31 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                         break;
                 }
             }
+
+            if (e.type == SDL_MOUSEWHEEL) {
+                SDL_GetMouseState(&mouseX, &mouseY);
+
+                if (e.wheel.y > 0) { // scroll up
+                    zoomFactor += zoomSpeed;
+                } else if (e.wheel.y < 0) { // scroll down
+                    zoomFactor -= zoomSpeed;
+                }
+                zoomFactor = MAX(1.0f, MIN(zoomFactor, 10.0f));
+
+                // Ajuster les décalages en fonction de la position de la souris
+                viewOffsetX = mouseX - (map.width / zoomFactor) / 2;
+                viewOffsetY = mouseY - (map.height / zoomFactor) / 2;
+
+                // Limiter les décalages pour ne pas dépasser les limites de la carte
+                viewOffsetX = MAX(0, MIN(viewOffsetX, map.width - (map.width / zoomFactor)));
+                viewOffsetY = MAX(0, MIN(viewOffsetY, map.height - (map.height / zoomFactor)));
+            } else if (e.type == SDL_MOUSEMOTION && zoomFactor >= 1.0f) {
+                SDL_GetMouseState(&mouseX, &mouseY);
+                viewOffsetX = mouseX - (map.width / zoomFactor) / 2;
+                viewOffsetY = mouseY - (map.height / zoomFactor) / 2;
+                viewOffsetX = MAX(0, MIN(viewOffsetX, map.width - (map.width / zoomFactor)));
+                viewOffsetY = MAX(0, MIN(viewOffsetY, map.height - (map.height / zoomFactor)));
+            }
         }
 
         // Update
@@ -162,7 +216,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         {
             int index = 1;
             if (map.cells[index] != NULL)
-                NeuralNetwork_Render(map.cells[index], renderer, index, 600, 300, 200, 300);
+                NeuralNetwork_Render(map.cells[index], renderer, index, 900, 400, 300, 400);
         }
 
         // Check generation
@@ -184,6 +238,15 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Show messages
         if (map.renderText)
             Render_Text(renderer, &map, COLOR_LIGHT_GRAY);
+
+        // Zoom
+        SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
+        SDL_RenderSetViewport(renderer, &(SDL_Rect) {
+            -viewOffsetX,
+            -viewOffsetY,
+            map.width,
+            map.height
+        });
 
         // Update screen
         SDL_RenderPresent(renderer);
@@ -209,7 +272,7 @@ void Game_reset(Map *map)
 
     // Reset & mutate firsts cells state
     int revived = 0;
-    while (revived < CELL_INIT)
+    while (revived < GAME_START_CELL_COUNT)
     {
         int bestIndex = -1;
         int bestScore = -1;
@@ -235,8 +298,12 @@ void Game_reset(Map *map)
     }
 
     // Reset foods state
-    for (int i = 0; i < FOOD_COUNT; ++i)
+    for (int i = 0; i < GAME_START_FOOD_COUNT; ++i)
         Food_reset(map->foods[i], map);
+
+    // Reset walls state
+    for (int i = 0; i < WALL_COUNT; ++i)
+        Wall_reset(map->walls[i], map);
 
     map->frames = 1;
     map->generation++;
@@ -245,19 +312,24 @@ void Game_reset(Map *map)
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
     // Render foods
-    for (int i = 0; i < FOOD_COUNT; ++i)
+    for (int i = 0; i < GAME_START_FOOD_COUNT; ++i)
         Food_render(map->foods[i], renderer, map->renderText);
 
     // Render cells
     for (int i = 0; i < map->cellCount; ++i)
         if (map->cells[i] != NULL)
             Cell_render(map->cells[i], renderer, map->renderRays, i == 1);
+
+    // Render walls
+    for (int i = 0; i < WALL_COUNT; ++i)
+        Wall_render(map->walls[i], renderer);
 }
 
 void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
 {
     char message[100];
 
+    // Game informations
     time_t currentTime = time(NULL) - map->startTime;
     sprintf(message, "Time: %dm %ds (Frame %d)", (int)(currentTime / 60), (int)(currentTime % 60), map->frames % 1000);
     stringRGBA(renderer, 100, 25, message, color.r, color.g, color.b, color.a);
@@ -285,6 +357,7 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
     sprintf(message, "Best score: %d (max: %d)", bestCell->score, map->maxScore);
     stringRGBA(renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
+    // Player informations
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
     stringRGBA(renderer, 500, 25, message, color.r, color.g, color.b, color.a);
 
@@ -296,4 +369,29 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
 
     sprintf(message, "Score: %d", map->cells[0]->score);
     stringRGBA(renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+
+    // Render controls
+    sprintf(message, "N: Show/Hide neural network");
+    stringRGBA(renderer, 850, 25, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "T: Show/Hide texts");
+    stringRGBA(renderer, 850, 50, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Y: Enable/Disable render of rays");
+    stringRGBA(renderer, 850, 75, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "I: Enable/Disable render of cells");
+    stringRGBA(renderer, 850, 100, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "O: Enable/Disable vertical sync");
+    stringRGBA(renderer, 850, 125, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "P: Pause/Unpause cells evolution");
+    stringRGBA(renderer, 850, 150, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Esc: Quit");
+    stringRGBA(renderer, 850, 175, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
+    stringRGBA(renderer, 850, 200, message, color.r, color.g, color.b, color.a);
 }
