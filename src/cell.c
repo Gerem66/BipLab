@@ -1,7 +1,7 @@
 #include "cell.h"
 
 
-Cell *Cell_init(int x, int y, bool isAI)
+Cell *Cell_init(SDL_Texture *sprite, int x, int y, bool isAI)
 {
     Cell *cell = malloc(sizeof(Cell));
     if (cell == NULL)
@@ -15,7 +15,7 @@ Cell *Cell_init(int x, int y, bool isAI)
     cell->positionInit.y = y;
     cell->healthInit = 20;
     cell->healthMax = 50;
-    cell->framePerHealth = 60;
+    cell->framePerHealth = 40;
     cell->birthCostMax = 15;
 
     cell->speedMin = -2.0f;
@@ -27,6 +27,7 @@ Cell *Cell_init(int x, int y, bool isAI)
     cell->color = COLOR_BLUE;
     if (!isAI)
         cell->color = COLOR_GREEN;
+    cell->sprite = sprite;
 
     // Init rays from -PI to PI
     for (int i = 0; i < 7; i++)
@@ -37,15 +38,6 @@ Cell *Cell_init(int x, int y, bool isAI)
         cell->raysWall[i].angle = -PI + i * PI / 3;
         cell->raysWall[i].distance = 0.0f;
         cell->raysWall[i].distanceMax = 100.0f;
-    }
-
-    // Load sprite
-    cell->sprite = IMG_Load("../ressources/cell.png");
-    if (cell->sprite == NULL)
-    {
-        printf("Erreur de chargement de l'image : %s", SDL_GetError());
-        free(cell);
-        return NULL;
     }
 
     Cell_reset(cell);
@@ -262,11 +254,18 @@ void Cell_GiveBirth(Cell *cell, Map *map)
         return;
     }
 
-    Cell *newCell = Cell_init(cell->positionInit.x, cell->positionInit.y, true);
+    SDL_Texture *sprite = LoadSprite(map->renderer, "../ressources/cell.png");
+    if (sprite == NULL)
+    {
+        printf("Erreur de création de la texture : %s", SDL_GetError());
+        return;
+    }
+
+    Cell *newCell = Cell_init(sprite, cell->positionInit.x, cell->positionInit.y, true);
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;
-    Cell_mutate(newCell, cell, 0.7f, 0.1f);
+    Cell_mutate(newCell, cell, 0.8f, 0.1f);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);
@@ -285,11 +284,25 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
                            255 * ((float)cell->health / (float)cell->healthInit),
                            cell->color.a);
 
-    if (isSelected)
-        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
-
     // Render filled circle
-    //SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+    if (isSelected)
+    {
+        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
+        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+    }
+    else
+    {
+        // Draw sprite
+        int radius = cell->radius * 1.5;
+        int angle = cell->angle + 90;
+        SDL_Rect positionFond = {
+            cell->position.x - radius,
+            cell->position.y - radius,
+            radius * 2,
+            radius * 2
+        };
+        SDL_RenderCopyEx(renderer, cell->sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
+    }
 
     // Render rays
     if (renderRays)
@@ -371,19 +384,6 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
     SDL_RenderDrawRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2, 5});
     SDL_SetRenderDrawColor(renderer, COLOR_GREEN.r, COLOR_GREEN.g, COLOR_GREEN.b, COLOR_GREEN.a);
     SDL_RenderFillRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2 * (float)cell->health / (float)cell->healthMax, 5});
-
-    // Draw sprite
-    int radius = cell->radius * 1.5;
-    int angle = cell->angle + 90;
-    SDL_Texture* sprite = SDL_CreateTextureFromSurface(renderer, cell->sprite);
-    SDL_Rect positionFond = {
-        cell->position.x - radius,
-        cell->position.y - radius,
-        radius * 2,
-        radius * 2
-    };
-    SDL_RenderCopyEx(renderer, sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
-    SDL_DestroyTexture(sprite);
 }
 
 void Cell_reset(Cell *cell)
@@ -407,7 +407,7 @@ void Cell_reset(Cell *cell)
 
 void Cell_destroy(Cell *cell)
 {
-    SDL_FreeSurface(cell->sprite);
+    freeSprite(cell->sprite);
     freeNeuralNetwork(cell->nn);
     free(cell);
 }

@@ -61,11 +61,11 @@ struct Cell
 
     int radius;
     SDL_Color color;
-    SDL_Surface *sprite;
+    SDL_Texture *sprite;
 };
 
 
-Cell *Cell_init(int x, int y, bool isAI);
+Cell *Cell_init(SDL_Texture *texture, int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);

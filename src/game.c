@@ -17,11 +17,13 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.renderNeuralNetwork = false;
     map.renderEnabled = true;
     map.cellCount = 0;
+    map.currentBestCellIndex = 1;
+    map.renderer = renderer;
 
     // Initialize walls
     for (int i = 0; i < WALL_COUNT; ++i)
     {
-        map.walls[i] = Wall_init(0, 0, 50, 50);
+        map.walls[i] = Wall_init(0, 0, 40, 40);
         if (map.walls[i] == NULL)
         {
             fprintf(stderr, "Error while initializing wall %d !\n", i);
@@ -62,7 +64,16 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             map.cells[i] = NULL;
             continue;
         }
-        map.cells[i] = Cell_init(map.width / 2, map.height / 2, i > 0);
+
+        // Load cell sprite
+        SDL_Texture *sprite = LoadSprite(renderer, "../ressources/cell.png");
+        if (sprite == NULL)
+        {
+            printf("Erreur de création de la texture : %s", SDL_GetError());
+            continue;
+        }
+
+        map.cells[i] = Cell_init(sprite, map.width / 2, map.height / 2, i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
@@ -209,12 +220,12 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Render
         Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);
         if (map.renderEnabled)
-            Game_render(renderer, &map);
+            Game_render(&map);
 
         // Render neural network
         if (map.renderNeuralNetwork)
         {
-            int index = 1;
+            int index = map.currentBestCellIndex;
             if (map.cells[index] != NULL)
                 NeuralNetwork_Render(map.cells[index], renderer, index, 900, 400, 300, 400);
         }
@@ -235,9 +246,19 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             Game_reset(&map);
         }
 
+        int bestCellIndex = 1;
+        for (int i = 2; i < map.cellCount; ++i)
+        {
+            if (map.cells[i] == NULL || map.cells[bestCellIndex] == NULL)
+                continue;
+            if (map.cells[i]->score > map.cells[bestCellIndex]->score)
+                bestCellIndex = i;
+        }
+        map.currentBestCellIndex = bestCellIndex;
+
         // Show messages
         if (map.renderText)
-            Render_Text(renderer, &map, COLOR_LIGHT_GRAY);
+            Render_Text(&map, COLOR_LIGHT_GRAY);
 
         // Zoom
         SDL_RenderSetScale(renderer, zoomFactor, zoomFactor);
@@ -293,7 +314,7 @@ void Game_reset(Map *map)
             return;
         }
         Cell_reset(map->cells[bestIndex]);
-        //Cell_mutate(map->cells[bestIndex], bestCell, 0.2f, 0.4f);
+        Cell_mutate(map->cells[bestIndex], bestCell, 1.0f, 0.25f);
         revived++;
     }
 
@@ -309,30 +330,30 @@ void Game_reset(Map *map)
     map->generation++;
 }
 
-void Game_render(SDL_Renderer *renderer, Map *map)
+void Game_render(Map *map)
 {
     // Render foods
     for (int i = 0; i < GAME_START_FOOD_COUNT; ++i)
-        Food_render(map->foods[i], renderer, map->renderText);
+        Food_render(map->foods[i], map->renderer, map->renderText);
 
     // Render cells
     for (int i = 0; i < map->cellCount; ++i)
         if (map->cells[i] != NULL)
-            Cell_render(map->cells[i], renderer, map->renderRays, i == 1);
+            Cell_render(map->cells[i], map->renderer, map->renderRays, i == map->currentBestCellIndex);
 
     // Render walls
     for (int i = 0; i < WALL_COUNT; ++i)
-        Wall_render(map->walls[i], renderer);
+        Wall_render(map->walls[i], map->renderer);
 }
 
-void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
+void Render_Text(Map *map, SDL_Color color)
 {
     char message[100];
 
     // Game informations
     time_t currentTime = time(NULL) - map->startTime;
     sprintf(message, "Time: %dm %ds (Frame %d)", (int)(currentTime / 60), (int)(currentTime % 60), map->frames % 1000);
-    stringRGBA(renderer, 100, 25, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 25, message, color.r, color.g, color.b, color.a);
 
     Cell *oldestCell = map->cells[1];
     for (int i = 1; i < map->cellCount; ++i)
@@ -341,57 +362,57 @@ void Render_Text(SDL_Renderer *renderer, Map *map, SDL_Color color)
     if (oldestCell->generation > map->maxGeneration)
         map->maxGeneration = oldestCell->generation;
     sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, map->maxGeneration);
-    stringRGBA(renderer, 100, 50, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 50, message, color.r, color.g, color.b, color.a);
 
     int aliveCount = 0;
     for (int i = 0; i < map->cellCount; ++i)
         if (map->cells[i] != NULL && map->cells[i]->isAlive)
             aliveCount++;
     sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
-    stringRGBA(renderer, 100, 75, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
 
     Cell *bestCell = map->cells[1];
     for (int i = 2; i < map->cellCount; ++i)
         if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
             bestCell = map->cells[i];
     sprintf(message, "Best score: %d (max: %d)", bestCell->score, map->maxScore);
-    stringRGBA(renderer, 100, 100, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
     // Player informations
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
-    stringRGBA(renderer, 500, 25, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Angle: %f", map->cells[0]->angle);
-    stringRGBA(renderer, 500, 75, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Speed: %f", map->cells[0]->speed);
-    stringRGBA(renderer, 500, 50, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 50, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Score: %d", map->cells[0]->score);
-    stringRGBA(renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
 
     // Render controls
     sprintf(message, "N: Show/Hide neural network");
-    stringRGBA(renderer, 850, 25, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 25, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "T: Show/Hide texts");
-    stringRGBA(renderer, 850, 50, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 50, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Y: Enable/Disable render of rays");
-    stringRGBA(renderer, 850, 75, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 75, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "I: Enable/Disable render of cells");
-    stringRGBA(renderer, 850, 100, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 100, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "O: Enable/Disable vertical sync");
-    stringRGBA(renderer, 850, 125, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 125, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "P: Pause/Unpause cells evolution");
-    stringRGBA(renderer, 850, 150, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 150, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Esc: Quit");
-    stringRGBA(renderer, 850, 175, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 175, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
-    stringRGBA(renderer, 850, 200, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 200, message, color.r, color.g, color.b, color.a);
 }

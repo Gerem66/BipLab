@@ -116,3 +116,29 @@ void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius) {
         }
     }
 }
+
+SDL_Texture *LoadSprite(SDL_Renderer *renderer, const char *file)
+{
+    // Load cell sprite
+    SDL_Surface *surface = IMG_Load(file);
+    if (surface == NULL)
+    {
+        printf("Erreur de chargement de l'image : %s", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_Texture *sprite = SDL_CreateTextureFromSurface(renderer, surface);
+    if (sprite == NULL)
+    {
+        printf("Erreur de création de la texture : %s", SDL_GetError());
+        return NULL;
+    }
+    SDL_FreeSurface(surface);
+
+    return sprite;
+}
+
+void freeSprite(SDL_Texture *sprite)
+{
+    SDL_DestroyTexture(sprite);
+}
