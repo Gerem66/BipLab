@@ -8,3 +8,6 @@ CMakeLists.txt.*
 # Markdown
 *.md
 !README.md
+
+# Code
+*.nn

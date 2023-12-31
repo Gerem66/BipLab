@@ -85,6 +85,48 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         map.cellCount++;
     }
 
+    // Load a neural network if file exists
+    NeuralNetwork *nn = loadNeuralNetwork("../ressources/best.nn");
+    if (nn != NULL)
+    {
+        // Ask user if he wants to load the neural network with SDL message box
+        SDL_MessageBoxData messageboxdata;
+        messageboxdata.flags = SDL_MESSAGEBOX_INFORMATION;
+        messageboxdata.window = NULL;
+        messageboxdata.title = "Neural network found !";
+        messageboxdata.message = "Do you want to load it ?";
+        messageboxdata.numbuttons = 2;
+        messageboxdata.buttons = (SDL_MessageBoxButtonData[2]) {
+            { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "No" },
+            { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Yes" },
+        };
+        messageboxdata.colorScheme = NULL;
+        int buttonid;
+        if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0)
+        {
+            fprintf(stderr, "Error while showing message box !\n");
+            freeNeuralNetwork(nn);
+        }
+        else if (buttonid == -1)
+        {
+            fprintf(stderr, "No button pressed !\n");
+            freeNeuralNetwork(nn);
+        }
+        else if (buttonid == 0)
+        {
+            freeNeuralNetwork(nn);
+            printf("Neural network not loaded !\n");
+        }
+        else if (buttonid == 1)
+        {
+            for (int i = 0; i < map.cellCount; ++i)
+                if (map.cells[i] != NULL)
+                    mutateNeuralNetwork(map.cells[i]->nn, nn, 1.0f, 0.0f);
+            printf("Neural network loaded !\n");
+            freeNeuralNetwork(nn);
+        }
+    }
+
     // Initialize framerate manager
     const int FPS = 60;
     FPSmanager fpsmanager;
@@ -140,6 +182,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                         break;
                     case SDLK_r:
                         //Game_reset(&map);
+                        break;
+                    case SDLK_RETURN:
+                        saveNeuralNetwork(map.cells[map.currentBestCellIndex]->nn, "../ressources/best.nn");
                         break;
                     case SDLK_t:
                         map.renderText = !map.renderText;
@@ -410,9 +455,12 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "P: Pause/Unpause cells evolution");
     stringRGBA(map->renderer, 850, 150, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Esc: Quit");
+    sprintf(message, "Return: Save best neural network");
     stringRGBA(map->renderer, 850, 175, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
     stringRGBA(map->renderer, 850, 200, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Esc: Quit");
+    stringRGBA(map->renderer, 850, 225, message, color.r, color.g, color.b, color.a);
 }

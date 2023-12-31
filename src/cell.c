@@ -43,7 +43,7 @@ Cell *Cell_init(SDL_Texture *sprite, int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {15, 6, 6, 4};
+    int topology[] = {15, 8, 6, 4};
     cell->nn = createNeuralNetwork(topology, 4);
     setRandomWeights(cell->nn, -1, 1);
 
