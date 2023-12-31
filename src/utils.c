@@ -26,22 +26,6 @@ void Utils_setBackgroundColor(SDL_Renderer *renderer, SDL_Color color)
     SDL_RenderClear(renderer);
 }
 
-long long Utils_time()
-{
-    struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
-    return t.tv_sec * 1000 + t.tv_nsec / 1000000;
-}
-
-float GetMillisecondsElapsed()
-{
-	static long long previous = 0;
-	long long current = Utils_time();
-	float elapsed = (current - previous) / 1000.0f;
-	previous = current;
-	return elapsed;
-}
-
 void Utils_randInit()
 {
     srand(time(NULL));
@@ -128,14 +112,14 @@ SDL_Texture *LoadSprite(SDL_Renderer *renderer, const char *file)
     SDL_Surface *surface = IMG_Load(file);
     if (surface == NULL)
     {
-        printf("Erreur de chargement de l'image : %s", SDL_GetError());
+        printf("Erreur de chargement de l'image : %s\n", SDL_GetError());
         return NULL;
     }
 
     SDL_Texture *sprite = SDL_CreateTextureFromSurface(renderer, surface);
     if (sprite == NULL)
     {
-        printf("Erreur de création de la texture : %s", SDL_GetError());
+        printf("Erreur de création de la texture : %s\n", SDL_GetError());
         return NULL;
     }
     SDL_FreeSurface(surface);

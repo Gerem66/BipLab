@@ -14,23 +14,26 @@ void Cell_update(Cell *cell, Map *map)
             cell->isAlive = false;
     }
 
+    // Update inputs
+    cell->inputs[0] = (double)cell->health / (double)cell->healthMax,
+    cell->inputs[1] = (double)(1 - cell->rays[0].distance / cell->rays[0].distanceMax);
+    cell->inputs[2] = (double)(1 - cell->rays[1].distance / cell->rays[1].distanceMax);
+    cell->inputs[3] = (double)(1 - cell->rays[2].distance / cell->rays[2].distanceMax);
+    cell->inputs[4] = (double)(1 - cell->rays[3].distance / cell->rays[3].distanceMax);
+    cell->inputs[5] = (double)(1 - cell->rays[4].distance / cell->rays[4].distanceMax);
+    cell->inputs[6] = (double)(1 - cell->rays[5].distance / cell->rays[5].distanceMax);
+    cell->inputs[7] = (double)(1 - cell->rays[6].distance / cell->rays[6].distanceMax);
+    cell->inputs[8] = (double)(1 - cell->raysWall[0].distance / cell->raysWall[0].distanceMax);
+    cell->inputs[9] = (double)(1 - cell->raysWall[1].distance / cell->raysWall[1].distanceMax);
+    cell->inputs[10] = (double)(1 - cell->raysWall[2].distance / cell->raysWall[2].distanceMax);
+    cell->inputs[11] = (double)(1 - cell->raysWall[3].distance / cell->raysWall[3].distanceMax);
+    cell->inputs[12] = (double)(1 - cell->raysWall[4].distance / cell->raysWall[4].distanceMax);
+    cell->inputs[13] = (double)(1 - cell->raysWall[5].distance / cell->raysWall[5].distanceMax);
+    cell->inputs[14] = (double)(1 - cell->raysWall[6].distance / cell->raysWall[6].distanceMax);
+
+    // Update outputs
     if (cell->isAI)
     {
-        cell->inputs[0] = (double)cell->health / (double)cell->healthMax,
-        cell->inputs[1] = (double)(1 - cell->rays[0].distance / cell->rays[0].distanceMax);
-        cell->inputs[2] = (double)(1 - cell->rays[1].distance / cell->rays[1].distanceMax);
-        cell->inputs[3] = (double)(1 - cell->rays[2].distance / cell->rays[2].distanceMax);
-        cell->inputs[4] = (double)(1 - cell->rays[3].distance / cell->rays[3].distanceMax);
-        cell->inputs[5] = (double)(1 - cell->rays[4].distance / cell->rays[4].distanceMax);
-        cell->inputs[6] = (double)(1 - cell->rays[5].distance / cell->rays[5].distanceMax);
-        cell->inputs[7] = (double)(1 - cell->rays[6].distance / cell->rays[6].distanceMax);
-        cell->inputs[8] = (double)(1 - cell->raysWall[0].distance / cell->raysWall[0].distanceMax);
-        cell->inputs[9] = (double)(1 - cell->raysWall[1].distance / cell->raysWall[1].distanceMax);
-        cell->inputs[10] = (double)(1 - cell->raysWall[2].distance / cell->raysWall[2].distanceMax);
-        cell->inputs[11] = (double)(1 - cell->raysWall[3].distance / cell->raysWall[3].distanceMax);
-        cell->inputs[12] = (double)(1 - cell->raysWall[4].distance / cell->raysWall[4].distanceMax);
-        cell->inputs[13] = (double)(1 - cell->raysWall[5].distance / cell->raysWall[5].distanceMax);
-        cell->inputs[14] = (double)(1 - cell->raysWall[6].distance / cell->raysWall[6].distanceMax);
         processInputs(cell->nn, cell->inputs, cell->outputs);
 
         cell->goingUp = cell->outputs[0] > 0.5;

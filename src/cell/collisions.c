@@ -1,4 +1,4 @@
-#include "collisions.h"
+#include "cell.h"
 
 // Thanks to ChatGPT
 

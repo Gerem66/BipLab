@@ -1,82 +1,15 @@
 #include "cell.h"
 
-void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected)
+void render_healthbar(Cell *cell, SDL_Renderer *renderer)
 {
-    if (!cell->isAlive)
-        return;
+    SDL_SetRenderDrawColor(renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
+    SDL_RenderDrawRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2, 5});
+    SDL_SetRenderDrawColor(renderer, COLOR_GREEN.r, COLOR_GREEN.g, COLOR_GREEN.b, COLOR_GREEN.a);
+    SDL_RenderFillRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2 * (float)cell->health / (float)cell->healthMax, 5});
+}
 
-    // Set renderer color to cell color
-    SDL_SetRenderDrawColor(renderer,
-                           255 * (1 - (float)cell->health / (float)cell->healthInit),
-                           cell->color.g,
-                           255 * ((float)cell->health / (float)cell->healthInit),
-                           cell->color.a);
-
-    // Render filled circle
-    if (isSelected)
-    {
-        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
-        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
-    }
-    else
-    {
-        // Draw sprite
-        int radius = cell->radius * 1.5;
-        int angle = cell->angle + 90;
-        SDL_Rect positionFond = {
-            cell->position.x - radius,
-            cell->position.y - radius,
-            radius * 2,
-            radius * 2
-        };
-        SDL_RenderCopyEx(renderer, cell->sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
-    }
-
-    // Render rays
-    if (renderRays)
-    {
-        for (int i = 0; i < 7; i++)
-        {
-            // Set renderer color to ray color
-            if (cell->rays[i].distance < cell->rays[i].distanceMax)
-            {
-                SDL_SetRenderDrawColor(renderer,
-                                    COLOR_RED.r,
-                                    COLOR_RED.g,
-                                    COLOR_RED.b,
-                                    COLOR_RED.a);
-            }
-            else
-            {
-                SDL_SetRenderDrawColor(renderer,
-                                    COLOR_WHITE.r,
-                                    COLOR_WHITE.g,
-                                    COLOR_WHITE.b,
-                                    COLOR_WHITE.a);
-            }
-
-            // Render ray
-            SDL_RenderDrawLine(renderer,
-                            cell->position.x,
-                            cell->position.y,
-                            cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                            cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
-
-            // Render food ray intersection
-            SDL_RenderFillCircle(renderer,
-                                cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                                cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                                2);
-
-            // Render wall ray intersection
-            SDL_RenderFillCircle(renderer,
-                                cell->position.x + cell->raysWall[i].distance * cos(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
-                                cell->position.y + cell->raysWall[i].distance * sin(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
-                                2);
-        }
-    }
-
-    // Draw a smiley face with the cell angle
+void render_face(Cell *cell, SDL_Renderer *renderer)
+{
     // Two small eyes with small arc for the mouth
     int eyeRadius = cell->radius / 8;
     int eyeOffsetX = cell->radius / 1;
@@ -106,10 +39,85 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
 
     // Draw mouth
     SDL_RenderDrawArc(renderer, mouthX, mouthY, mouthRadius, mouthStartAngle, mouthEndAngle);
+}
 
-    // Draw health bar
-    SDL_SetRenderDrawColor(renderer, COLOR_WHITE.r, COLOR_WHITE.g, COLOR_WHITE.b, COLOR_WHITE.a);
-    SDL_RenderDrawRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2, 5});
-    SDL_SetRenderDrawColor(renderer, COLOR_GREEN.r, COLOR_GREEN.g, COLOR_GREEN.b, COLOR_GREEN.a);
-    SDL_RenderFillRect(renderer, &(SDL_Rect){cell->position.x - cell->radius, cell->position.y - cell->radius - 10, cell->radius * 2 * (float)cell->health / (float)cell->healthMax, 5});
+void render_rays(Cell *cell, SDL_Renderer *renderer)
+{
+    for (int i = 0; i < 7; i++)
+    {
+        // Set renderer color to ray color
+        if (cell->rays[i].distance < cell->rays[i].distanceMax)
+        {
+            SDL_SetRenderDrawColor(renderer,
+                                COLOR_RED.r,
+                                COLOR_RED.g,
+                                COLOR_RED.b,
+                                COLOR_RED.a);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer,
+                                COLOR_WHITE.r,
+                                COLOR_WHITE.g,
+                                COLOR_WHITE.b,
+                                COLOR_WHITE.a);
+        }
+
+        // Render ray
+        SDL_RenderDrawLine(renderer,
+                        cell->position.x,
+                        cell->position.y,
+                        cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                        cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
+
+        // Render food ray intersection
+        SDL_RenderFillCircle(renderer,
+                            cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                            cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                            2);
+
+        // Render wall ray intersection
+        SDL_RenderFillCircle(renderer,
+                            cell->position.x + cell->raysWall[i].distance * cos(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
+                            cell->position.y + cell->raysWall[i].distance * sin(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
+                            2);
+    }
+}
+
+void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected)
+{
+    if (!cell->isAlive)
+        return;
+
+    // Render filled circle
+    if (isSelected)
+    {
+        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
+        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+        render_face(cell, renderer);
+    }
+    else if (cell->sprite != NULL)
+    {
+        // Draw sprite
+        int radius = cell->radius * 1.5;
+        int angle = cell->angle + 90;
+        SDL_Rect positionFond = {
+            cell->position.x - radius,
+            cell->position.y - radius,
+            radius * 2,
+            radius * 2
+        };
+        SDL_RenderCopyEx(renderer, cell->sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
+    }
+    else
+    {
+        SDL_SetRenderDrawColor(renderer, COLOR_VIOLET.r, COLOR_VIOLET.g, COLOR_VIOLET.b, COLOR_VIOLET.a);
+        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+        render_face(cell, renderer);
+    }
+
+    render_healthbar(cell, renderer);
+
+    if (renderRays)
+        render_rays(cell, renderer);
 }

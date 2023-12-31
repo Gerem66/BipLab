@@ -71,12 +71,6 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
 
         // Load cell sprite
         SDL_Texture *sprite = LoadSprite(renderer, "../ressources/cell.png");
-        if (sprite == NULL)
-        {
-            printf("Erreur de création de la texture : %s", SDL_GetError());
-            continue;
-        }
-
         map.cells[i] = Cell_create(sprite, map.width / 2, map.height / 2, i > 0);
         if (map.cells[i] == NULL)
         {
@@ -90,7 +84,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Load a neural network if file exists
-    NeuralNetwork *nn = loadNeuralNetwork("../ressources/best.nn");
+    NeuralNetwork *nn = Game_load(&map, "../ressources/best.nn");
     if (nn != NULL)
     {
         int popup_result = open_popup_ask(
@@ -130,6 +124,20 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Delay
         if (map.verticalSync)
             SDL_framerateDelay(&fpsmanager);
+    }
+
+    int popup_result = open_popup_ask(
+        "Quit without saving ?",
+        "Do you want to save the neural network ?"
+    );
+    if (popup_result == 1)
+    {
+        bool saved = Game_save(&map, "../ressources/best.nn");
+        if (!saved)
+            open_popup_message(
+                "Error while saving !",
+                "An error occured while saving the neural network !"
+            );
     }
 
     return true;

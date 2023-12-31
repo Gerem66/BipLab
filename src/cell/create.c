@@ -23,9 +23,6 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->angleVelocity = 4.0f;
 
     cell->radius = 10;
-    cell->color = COLOR_BLUE;
-    if (!isAI)
-        cell->color = COLOR_GREEN;
     cell->sprite = sprite;
 
     // Init rays from -PI to PI
@@ -78,12 +75,6 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     }
 
     SDL_Texture *sprite = LoadSprite(map->renderer, "../ressources/cell.png");
-    if (sprite == NULL)
-    {
-        printf("Erreur de création de la texture : %s", SDL_GetError());
-        return;
-    }
-
     Cell *newCell = Cell_create(sprite, cell->positionInit.x, cell->positionInit.y, true);
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;

@@ -33,9 +33,6 @@ extern const SDL_Color COLOR_VIOLET;
 
 void Utils_setBackgroundColor(SDL_Renderer *renderer, SDL_Color color);
 
-long long Utils_time();
-float GetMillisecondsElapsed();
-
 void Utils_randInit();
 int Utils_rand(int min, int max);
 float Utils_map(float value, float min1, float max1, float min2, float max2);

@@ -12,7 +12,6 @@ typedef struct Cell Cell;
 
 #include "game.h"
 #include "neuralNetwork.h"
-#include "collisions.h"
 #include "wall.h"
 #include "utils.h"
 
@@ -60,7 +59,6 @@ struct Cell
     bool goingRight;
 
     int radius;
-    SDL_Color color;
     SDL_Texture *sprite;
 };
 
@@ -72,5 +70,9 @@ void Cell_GiveBirth(Cell *cell, Map *map);
 void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected);
 void Cell_reset(Cell *cell);
 void Cell_destroy(Cell *cell);
+
+// Collisions
+bool check_rect_collision(Cell *cell, SDL_FRect *hitbox);
+float check_ray_collision(Cell *cell, SDL_FRect *hitbox, int rayIndex);
 
 #endif // CELL_H

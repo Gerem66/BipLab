@@ -65,7 +65,7 @@ void Game_reset(Map *map);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
 
-bool saveNeuralNetwork(NeuralNetwork *nn, char *filename);
-NeuralNetwork* loadNeuralNetwork(char *filename);
+bool Game_save(Map *map, char *filename);
+NeuralNetwork* Game_load(Map *map, char *filename);
 
 #endif // GAME_H
