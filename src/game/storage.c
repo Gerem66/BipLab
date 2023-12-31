@@ -9,7 +9,8 @@ bool Game_save(Map *map, char *filename)
     }
 
     // Save map time and generation
-    fprintf(file, "%ld %d\n", map->startTime, map->generation);
+    time_t duration = time(NULL) - map->startTime;
+    fprintf(file, "%ld %d\n", duration, map->generation);
 
     // Save the topology
     NeuralNetwork *nn = map->cells[map->currentBestCellIndex]->nn;
@@ -39,7 +40,9 @@ NeuralNetwork* Game_load(Map *map, char *filename)
     }
 
     // Load map time and generation
-    fscanf(file, "%ld %d", &map->startTime, &map->generation);
+    time_t duration;
+    fscanf(file, "%ld %d", &duration, &map->generation);
+    map->startTime = time(NULL) - duration;
 
     // Load the topology
     int topologySize;
