@@ -13,6 +13,8 @@ typedef struct Map Map;
 #include "cell.h"
 #include "food.h"
 #include "wall.h"
+#include "popup.h"
+#include "neuralNetwork.h"
 
 // Maximum number in memory
 #define CELL_COUNT 1000
@@ -23,11 +25,17 @@ typedef struct Map Map;
 #define GAME_START_CELL_COUNT 100
 #define GAME_START_FOOD_COUNT 30
 
+// Settings
+#define CONTROLS_ZOOM_SPEED 0.2
+
 
 struct Map
 {
     int width;
     int height;
+    SDL_Point viewOffset;
+    float zoomFactor;
+
     time_t startTime;
     Cell *cells[CELL_COUNT];
     Food *foods[FOOD_COUNT];
@@ -44,14 +52,20 @@ struct Map
     bool renderNeuralNetwork;
     bool renderEnabled;
 
+    bool quit;
     int currentBestCellIndex;
     SDL_Renderer *renderer;
 };
 
 
 bool Game_start(SDL_Renderer *renderer, int w, int h);
+void Game_events(Map *map, SDL_Event *event);
+void Game_update(Map *map);
 void Game_reset(Map *map);
-void Game_render(Map *map);
+void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
+
+bool saveNeuralNetwork(NeuralNetwork *nn, char *filename);
+NeuralNetwork* loadNeuralNetwork(char *filename);
 
 #endif // GAME_H

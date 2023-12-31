@@ -11,7 +11,7 @@ typedef struct Ray Ray;
 typedef struct Cell Cell;
 
 #include "game.h"
-#include "NeuralNetwork.h"
+#include "neuralNetwork.h"
 #include "collisions.h"
 #include "wall.h"
 #include "utils.h"
@@ -65,7 +65,7 @@ struct Cell
 };
 
 
-Cell *Cell_init(SDL_Texture *texture, int x, int y, bool isAI);
+Cell *Cell_create(SDL_Texture *texture, int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);

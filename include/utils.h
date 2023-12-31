@@ -9,6 +9,7 @@
 // Define MAX and MIN macros
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define CLAMP(X, Y, Z) (MAX(MIN(X, Z), Y))
 
 #define COLOR_BREAKUP(COLOR)    COLOR.r, COLOR.g, COLOR.b, COLOR.a
 

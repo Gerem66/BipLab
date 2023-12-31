@@ -31,9 +31,6 @@ void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutati
 void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue);
 void freeNeuralNetwork(NeuralNetwork *nn);
 
-void saveNeuralNetwork(NeuralNetwork *nn, char *filename);
-NeuralNetwork* loadNeuralNetwork(char *filename);
-
 void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, int y, int w, int h);
 
 #endif // NEURALNETWORK_H

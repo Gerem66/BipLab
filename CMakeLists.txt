@@ -7,7 +7,7 @@ project(CellsEvolution)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 
 # Add all c source files under the src directory
-file(GLOB SOURCES "src/*.c")
+file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add all headers files under the include directory
