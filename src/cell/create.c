@@ -74,7 +74,9 @@ void Cell_GiveBirth(Cell *cell, Map *map)
         return;
     }
 
-    SDL_Texture *sprite = LoadSprite(map->renderer, "../ressources/cell.png");
+    SDL_Texture *sprite = NULL;
+    if (CELL_USE_SPRITE)
+        sprite = LoadSprite(map->renderer, "../ressources/cell.png");
     Cell *newCell = Cell_create(sprite, cell->positionInit.x, cell->positionInit.y, true);
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;

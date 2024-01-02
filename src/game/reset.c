@@ -3,8 +3,8 @@
 void Game_reset(Map *map)
 {
     // Get best cell
-    Cell *bestCell = map->cells[1];
-    for (int i = 2; i < map->cellCount; ++i)
+    Cell *bestCell = map->cells[0];
+    for (int i = 0; i < map->cellCount; ++i)
         if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
             bestCell = map->cells[i];
 

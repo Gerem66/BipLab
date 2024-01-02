@@ -31,7 +31,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         if (map.walls[i] == NULL)
         {
             fprintf(stderr, "Error while initializing wall %d !\n", i);
-            for(int j = 0; j < i; ++j)
+            for (int j = 0; j < i; ++j)
             {
                 Wall_destroy(map.walls[j]);
             }
@@ -52,7 +52,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         if (map.foods[i] == NULL)
         {
             fprintf(stderr, "Error while initializing food %d !\n", i);
-            for(int j = 0; j < i; ++j)
+            for (int j = 0; j < i; ++j)
             {
                 Food_destroy(map.foods[j]);
             }
@@ -61,21 +61,28 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize cells
-    for(int i = 0; i < CELL_COUNT; ++i)
+    if (GAME_START_CELL_COUNT <= 0 || GAME_START_CELL_COUNT > CELL_COUNT)
     {
-        if (i > GAME_START_CELL_COUNT)
+        fprintf(stderr, "Error while initializing cells !\n");
+        return false;
+    }
+    for (int i = 0; i < CELL_COUNT; ++i)
+    {
+        if (i >= GAME_START_CELL_COUNT)
         {
             map.cells[i] = NULL;
             continue;
         }
 
         // Load cell sprite
-        SDL_Texture *sprite = LoadSprite(renderer, "../ressources/cell.png");
+        SDL_Texture *sprite = NULL;
+        if (CELL_USE_SPRITE)
+            sprite = LoadSprite(renderer, "../ressources/cell.png");
         map.cells[i] = Cell_create(sprite, map.width / 2, map.height / 2, i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
-            for(int j = 0; j < i; ++j)
+            for (int j = 0; j < i; ++j)
                 if (map.cells[j] != NULL)
                     Cell_destroy(map.cells[j]);
             return false;

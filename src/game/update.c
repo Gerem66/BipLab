@@ -14,7 +14,7 @@ void Game_update(Map *map)
 
     // Check generation
     bool allDead = true;
-    for (int i = 1; i < map->cellCount; ++i)
+    for (int i = 0; i < map->cellCount; ++i)
     {
         if (map->cells[i] != NULL && map->cells[i]->isAlive)
         {
@@ -28,8 +28,8 @@ void Game_update(Map *map)
         Game_reset(map);
 
     // Update best cell
-    int bestCellIndex = 1;
-    for (int i = 2; i < map->cellCount; ++i)
+    int bestCellIndex = 0;
+    for (int i = 0; i < map->cellCount; ++i)
     {
         if (map->cells[i] == NULL || map->cells[bestCellIndex] == NULL)
             continue;
@@ -39,8 +39,8 @@ void Game_update(Map *map)
     map->currentBestCellIndex = bestCellIndex;
 
     // Update oldest cell
-    Cell *oldestCell = map->cells[1];
-    for (int i = 1; i < map->cellCount; ++i)
+    Cell *oldestCell = map->cells[0];
+    for (int i = 0; i < map->cellCount; ++i)
         if (map->cells[i] != NULL && map->cells[i]->generation > oldestCell->generation)
             oldestCell = map->cells[i];
     if (oldestCell->generation > map->maxGeneration)
