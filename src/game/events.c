@@ -36,8 +36,7 @@ void Game_events(Map *map, SDL_Event *event)
                 //Game_reset(map);
                 break;
             case SDLK_RETURN:
-                bool saved = Game_save(map, "../ressources/best.nn");
-                if (saved)
+                if (Game_save(map, "../ressources/best.nn"))
                     open_popup_message(
                         "Neural network saved !",
                         "The neural network has been saved in the file \"best.nn\" !"

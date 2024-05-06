@@ -26,7 +26,7 @@ void Utils_setBackgroundColor(SDL_Renderer *renderer, SDL_Color color)
     SDL_RenderClear(renderer);
 }
 
-void Utils_randInit()
+void Utils_randInit(void)
 {
     srand(time(NULL));
 }

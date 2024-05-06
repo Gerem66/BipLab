@@ -102,14 +102,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         {
             for (int i = 0; i < map.cellCount; ++i)
                 if (map.cells[i] != NULL)
-                    mutateNeuralNetwork(map.cells[i]->nn, nn, 1.0f, 0.0f);
+                    copyNeuralNetwork(map.cells[i]->nn, nn);
             printf("Neural network loaded !\n");
         }
         freeNeuralNetwork(nn);
     }
 
     // Initialize framerate manager
-    const int FPS = 60;
+    const int FPS = 120;
     FPSmanager fpsmanager;
     SDL_initFramerate(&fpsmanager);
     SDL_setFramerate(&fpsmanager, FPS);

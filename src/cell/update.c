@@ -173,7 +173,7 @@ void Cell_update(Cell *cell, Map *map)
     }
 }
 
-void Cell_mutate(Cell *cell, Cell *parent, float mutationRate, float mutationProbability)
+void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
 {
-    mutateNeuralNetwork(cell->nn, parent->nn, mutationRate, mutationProbability);
+    mutateNeuralNetwork(cell->nn, mutationRate, mutationProbability);
 }

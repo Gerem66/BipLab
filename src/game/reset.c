@@ -34,7 +34,8 @@ void Game_reset(Map *map)
             return;
         }
         Cell_reset(map->cells[bestIndex]);
-        Cell_mutate(map->cells[bestIndex], bestCell, 0.6f, 1.0f);
+        copyNeuralNetwork(map->cells[bestIndex]->nn, bestCell->nn);
+        Cell_mutate(map->cells[bestIndex], 0.2f, 0.2f);
         revived++;
     }
 

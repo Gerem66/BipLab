@@ -30,10 +30,10 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     {
         cell->rays[i].angle = -PI + i * PI / 3;
         cell->rays[i].distance = 0.0f;
-        cell->rays[i].distanceMax = 100.0f;
+        cell->rays[i].distanceMax = 300.0f;
         cell->raysWall[i].angle = -PI + i * PI / 3;
         cell->raysWall[i].distance = 0.0f;
-        cell->raysWall[i].distanceMax = 100.0f;
+        cell->raysWall[i].distanceMax = 200.0f;
     }
 
     Cell_reset(cell);
@@ -81,7 +81,8 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;
-    Cell_mutate(newCell, cell, 1.0f, 0.05f);
+    copyNeuralNetwork(newCell->nn, cell->nn);
+    Cell_mutate(newCell, 0.3f, 0.05f);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);

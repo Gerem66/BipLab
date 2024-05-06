@@ -2,7 +2,7 @@
 
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
-    Utils_setBackgroundColor(renderer, COLOR_DARK_GRAY);
+    Utils_setBackgroundColor(renderer, COLOR_BLACK);
 
     if (map->renderEnabled)
     {

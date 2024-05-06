@@ -3,7 +3,14 @@
 
 #include <stdbool.h>
 #include <SDL.h>
-#include <SDL2/SDL_image.h>
+
+// MacOS
+#if defined(__APPLE__)
+    #include <SDL_image.h>
+#else
+// Linux
+    #include <SDL2/SDL_image.h>
+#endif
 
 
 // Define MAX and MIN macros
@@ -33,7 +40,7 @@ extern const SDL_Color COLOR_VIOLET;
 
 void Utils_setBackgroundColor(SDL_Renderer *renderer, SDL_Color color);
 
-void Utils_randInit();
+void Utils_randInit(void);
 int Utils_rand(int min, int max);
 float Utils_map(float value, float min1, float max1, float min2, float max2);
 float Utils_randomFloat(float min, float max);

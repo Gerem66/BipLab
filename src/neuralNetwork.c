@@ -54,22 +54,24 @@ void processInputs(NeuralNetwork *nn, double *inputs, double *outputs) {
     }
 }
 
-void mutateNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent, double mutationRate, float mutationProbability)
+void mutateNeuralNetwork(NeuralNetwork *nn, double mutationRate, float mutationProbability)
 {
+    for (int i = 0; i < nn->topologySize - 1; i++) {
+        NeuralLayer *layer = nn->layers[i];
+        for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++) {
+            if (rand() / (double)RAND_MAX < mutationProbability) {
+                layer->weights[j] += randomWeight(-mutationRate, mutationRate);
+            }
+        }
+    }
+}
+
+void copyNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent) {
     for (int i = 0; i < nn->topologySize - 1; i++) {
         NeuralLayer *layer = nn->layers[i];
         NeuralLayer *parentLayer = parent->layers[i];
         for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++) {
-            if (rand() / (double)RAND_MAX < mutationProbability)
-            {
-                layer->weights[j] = MIN(1, MAX(-1, layer->weights[j] + randomWeight(-0.1f, 0.1f)));
-            }
-            else
-            {
-                double delta = parentLayer->weights[j] - layer->weights[j];
-                double mutation = delta * mutationRate;
-                layer->weights[j] += mutation;
-            }
+            layer->weights[j] = parentLayer->weights[j];
         }
     }
 }

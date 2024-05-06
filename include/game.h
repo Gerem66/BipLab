@@ -19,11 +19,11 @@ typedef struct Map Map;
 // Maximum number in memory
 #define CELL_COUNT 1000
 #define FOOD_COUNT 50
-#define WALL_COUNT 4
+#define WALL_COUNT 6
 
 // Starting number
 #define GAME_START_CELL_COUNT 100
-#define GAME_START_FOOD_COUNT 30
+#define GAME_START_FOOD_COUNT 20
 
 // Settings
 #define CELL_USE_SPRITE     true

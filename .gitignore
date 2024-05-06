@@ -11,3 +11,6 @@ CMakeLists.txt.*
 
 # Code
 *.nn
+
+# MacOS
+.DS_Store
