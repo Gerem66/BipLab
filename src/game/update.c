@@ -25,7 +25,7 @@ void Game_update(Map *map)
 
     // Next generation
     if (allDead)
-        Game_reset(map);
+        Game_reset(map, false);
 
     // Update best cell
     int bestCellIndex = 0;
@@ -37,6 +37,19 @@ void Game_update(Map *map)
             bestCellIndex = i;
     }
     map->currentBestCellIndex = bestCellIndex;
+
+    if (map->cells[bestCellIndex]->score > map->bestCellEver->score)
+    {
+        NeuralNetwork *bestNN = NeuralNetwork_Copy(map->cells[bestCellIndex]->nn);
+        if (bestNN != NULL)
+        {
+            freeNeuralNetwork(map->bestCellEver->nn);
+            map->bestCellEver->nn = bestNN;
+        }
+
+        map->bestCellEver->score = map->cells[bestCellIndex]->score;
+        map->bestCellEver->generation = map->generation;
+    }
 
     // Update oldest cell
     Cell *oldestCell = map->cells[0];

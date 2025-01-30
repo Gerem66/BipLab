@@ -8,6 +8,8 @@
 // Define screen dimensions
 #define SCREEN_WIDTH    1200
 #define SCREEN_HEIGHT   800
+#define GAME_WIDTH    1200
+#define GAME_HEIGHT   800
 
 int main(int argc, char* argv[])
 {
@@ -57,7 +59,7 @@ int main(int argc, char* argv[])
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
             // Start the game
-            Game_start(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+            Game_start(renderer, GAME_WIDTH, GAME_HEIGHT);
 
             // Destroy renderer
             SDL_DestroyRenderer(renderer);

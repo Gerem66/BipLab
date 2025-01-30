@@ -1,15 +1,24 @@
 #include "game.h"
 
-void Game_reset(Map *map)
+void Game_reset(Map *map, bool fullReset)
 {
     // Get best cell
-    Cell *bestCell = map->cells[0];
-    for (int i = 0; i < map->cellCount; ++i)
-        if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
-            bestCell = map->cells[i];
+    Cell *bestCell;
 
-    if (bestCell->score > map->maxScore)
-        map->maxScore = bestCell->score;
+    if (fullReset)
+    {
+        bestCell = map->bestCellEver;
+    }
+    else
+    {
+        bestCell = map->cells[0];
+        for (int i = 0; i < map->cellCount; ++i)
+            if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
+                bestCell = map->cells[i];
+
+        if (bestCell->score > map->maxScore)
+            map->maxScore = bestCell->score;
+    }
 
     // Reset & mutate firsts cells state
     int revived = 0;
@@ -33,9 +42,19 @@ void Game_reset(Map *map)
             fprintf(stderr, "Error while reviving cells !\n");
             return;
         }
+        
+        NeuralNetwork *newNN = NeuralNetwork_Copy(bestCell->nn);
+        if (newNN == NULL)
+        {
+            fprintf(stderr, "Failed to copy NeuralNetwork !\n");
+            return;
+        }
+
         Cell_reset(map->cells[bestIndex]);
-        copyNeuralNetwork(map->cells[bestIndex]->nn, bestCell->nn);
+        freeNeuralNetwork(map->cells[bestIndex]->nn);
+        map->cells[bestIndex]->nn = newNN;
         Cell_mutate(map->cells[bestIndex], 0.2f, 0.2f);
+
         revived++;
     }
 
@@ -44,7 +63,7 @@ void Game_reset(Map *map)
         Food_reset(map->foods[i], map);
 
     // Reset walls state
-    for (int i = 0; i < WALL_COUNT; ++i)
+    for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
         Wall_reset(map->walls[i], map);
 
     map->frames = 1;

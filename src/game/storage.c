@@ -1,5 +1,15 @@
 #include "game.h"
 
+bool Game_exists(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        return false;
+    }
+    fclose(file);
+    return true;
+}
+
 bool Game_save(Map *map, char *filename)
 {
     FILE *file = fopen(filename, "w");

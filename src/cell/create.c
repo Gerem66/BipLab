@@ -12,10 +12,10 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->isAI = isAI;
     cell->positionInit.x = x;
     cell->positionInit.y = y;
-    cell->healthInit = 20;
-    cell->healthMax = 50;
-    cell->framePerHealth = 30;
-    cell->birthCostMax = 15;
+    cell->healthInit = 30;
+    cell->healthMax = 100;
+    cell->framePerHealth = 20;
+    cell->birthCostMax = 40;
 
     cell->speedMin = -2.0f;
     cell->speedMax = 3.0f;
@@ -23,24 +23,30 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->angleVelocity = 4.0f;
 
     cell->radius = 10;
+    cell->hitbox.x = x - cell->radius;
+    cell->hitbox.y = y - cell->radius;
+    cell->hitbox.w = cell->radius * 2;
+    cell->hitbox.h = cell->radius * 2;
     cell->sprite = sprite;
 
     // Init rays from -PI to PI
+    float demiAngle = PI / 4.0f;
     for (int i = 0; i < 7; i++)
     {
-        cell->rays[i].angle = -PI + i * PI / 3;
+        cell->rays[i].angle = -demiAngle + i * demiAngle / 3;
         cell->rays[i].distance = 0.0f;
-        cell->rays[i].distanceMax = 300.0f;
-        cell->raysWall[i].angle = -PI + i * PI / 3;
+        cell->rays[i].distanceMax = 600.0f;
+        cell->raysWall[i].angle = -demiAngle + i * demiAngle / 3;
         cell->raysWall[i].distance = 0.0f;
-        cell->raysWall[i].distanceMax = 200.0f;
+        cell->raysWall[i].distanceMax = 600.0f;
     }
 
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topology[] = {15, 10, 8, 4};
-    cell->nn = createNeuralNetwork(topology, 4);
+    int topologySize = NEURAL_NETWORK_INIT_TOPOLOGY_SIZE;
+    int topology[] = NEURAL_NETWORK_INIT_TOPOLOGY;
+    cell->nn = createNeuralNetwork(topology, topologySize);
     setRandomWeights(cell->nn, -1, 1);
 
     return cell;
@@ -81,7 +87,17 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;
-    copyNeuralNetwork(newCell->nn, cell->nn);
+
+    // Copy NeuralNetwork and mutate
+    NeuralNetwork *newNN = NeuralNetwork_Copy(cell->nn);
+    if (newNN == NULL)
+    {
+        fprintf(stderr, "Failed to copy NeuralNetwork !\n");
+        return;
+    }
+
+    freeNeuralNetwork(newCell->nn);
+    newCell->nn = newNN;
     Cell_mutate(newCell, 0.3f, 0.05f);
 
     if (map->cells[index] != NULL)

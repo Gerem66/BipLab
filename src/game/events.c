@@ -33,7 +33,7 @@ void Game_events(Map *map, SDL_Event *event)
                 map->renderNeuralNetwork = !map->renderNeuralNetwork;
                 break;
             case SDLK_r:
-                //Game_reset(map);
+                Game_reset(map, true);
                 break;
             case SDLK_RETURN:
                 if (Game_save(map, "../ressources/best.nn"))
@@ -86,12 +86,12 @@ void Game_events(Map *map, SDL_Event *event)
     if (event->type == SDL_MOUSEWHEEL) {
         // Scroll up
         if (event->wheel.y > 0) {
-            map->zoomFactor = CLAMP(map->zoomFactor + CONTROLS_ZOOM_SPEED, 1.0f, 10.0f);
+            map->zoomFactor = CLAMP(map->zoomFactor + CONTROLS_ZOOM_SPEED, 0.5f, 10.0f);
         }
 
         // Scroll down
         else if (event->wheel.y < 0) {
-            map->zoomFactor = CLAMP(map->zoomFactor - CONTROLS_ZOOM_SPEED, 1.0f, 10.0f);
+            map->zoomFactor = CLAMP(map->zoomFactor - CONTROLS_ZOOM_SPEED, 0.5f, 10.0f);
         }
 
         // Move view to mouse position

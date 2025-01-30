@@ -25,7 +25,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.renderer = renderer;
 
     // Initialize walls
-    for (int i = 0; i < WALL_COUNT; ++i)
+    for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
     {
         map.walls[i] = Wall_init(0, 0, 40, 40);
         if (map.walls[i] == NULL)
@@ -90,22 +90,47 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         map.cellCount++;
     }
 
+    // Initialize best cell ever
+    map.bestCellEver = Cell_create(NULL, map.width / 2, map.height / 2, false);
+
     // Load a neural network if file exists
-    NeuralNetwork *nn = Game_load(&map, "../ressources/best.nn");
-    if (nn != NULL)
+    char filename[] = "../ressources/best.nn";
+
+    int popup_result = 0;
+
+    if (Game_exists(filename))
     {
-        int popup_result = open_popup_ask(
+        popup_result = open_popup_ask(
             "Neural network found !",
             "Do you want to load it ?"
         );
-        if (popup_result == 1)
+    }
+
+    NeuralNetwork *nn = NULL;
+    if (popup_result == 1)
+    {
+        nn = Game_load(&map, filename);
+        for (int i = 0; i < map.cellCount; ++i)
         {
-            for (int i = 0; i < map.cellCount; ++i)
-                if (map.cells[i] != NULL)
-                    copyNeuralNetwork(map.cells[i]->nn, nn);
-            printf("Neural network loaded !\n");
+            if (map.cells[i] != NULL)
+            {
+                NeuralNetwork *newNN = NeuralNetwork_Copy(nn);
+                if (newNN == NULL)
+                {
+                    fprintf(stderr, "Failed to copy NeuralNetwork !\n");
+                    return false;
+                }
+
+                freeNeuralNetwork(map.cells[i]->nn);
+                map.cells[i]->nn = newNN;
+            }
         }
+        printf("Neural network loaded !\n");
+    }
+    if (nn != NULL)
+    {
         freeNeuralNetwork(nn);
+        nn = NULL;
     }
 
     // Initialize framerate manager
@@ -133,11 +158,11 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             SDL_framerateDelay(&fpsmanager);
     }
 
-    int popup_result = open_popup_ask(
+    int popup_save_result = open_popup_ask(
         "Quit without saving ?",
         "Do you want to save the neural network ?"
     );
-    if (popup_result == 1)
+    if (popup_save_result == 1)
     {
         bool saved = Game_save(&map, "../ressources/best.nn");
         if (!saved)

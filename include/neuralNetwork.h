@@ -21,14 +21,14 @@ struct NeuralLayer {
 struct NeuralNetwork {
     int *topology;
     int topologySize;
-    int weightCount;
     NeuralLayer **layers;
 };
 
-NeuralNetwork* createNeuralNetwork(int *topology, int topologySize);
+NeuralNetwork *createNeuralNetwork(int *topology, int topologySize);
+NeuralNetwork *NeuralNetwork_Copy(NeuralNetwork *parent);
 void processInputs(NeuralNetwork *nn, double *inputs, double *outputs);
-void mutateNeuralNetwork(NeuralNetwork *nn, double mutationRate, float mutationProbability);
-void copyNeuralNetwork(NeuralNetwork *nn, NeuralNetwork *parent);
+void mutate_NeuralNetwork_Weights(NeuralNetwork *nn, double mutationRate, float mutationProbability);
+void mutate_NeuralNetwork_Topology(NeuralNetwork *nn, int maxNeurons, int maxLayers, float mutationProbability);
 void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue);
 void freeNeuralNetwork(NeuralNetwork *nn);
 

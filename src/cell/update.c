@@ -81,6 +81,8 @@ void Cell_update(Cell *cell, Map *map)
     // Update position
     cell->position.x += cell->speed * (float)cos(cell->angle * PI / 180.0f);
     cell->position.y += cell->speed * (float)sin(cell->angle * PI / 180.0f);
+    cell->hitbox.x = cell->position.x - cell->radius;
+    cell->hitbox.y = cell->position.y - cell->radius;
 
     // Cell out of bounds
     if (cell->position.x < 0.0f)
@@ -93,25 +95,25 @@ void Cell_update(Cell *cell, Map *map)
         cell->position.y = 0.0f;
 
     // Check cell collision with walls
-    for (int i = 0; i < WALL_COUNT; i++)
-    {
-        if (SDL_HasIntersection(
-            &(SDL_Rect) {
-                (int)cell->position.x - cell->radius,
-                (int)cell->position.y - cell->radius,
-                cell->radius * 2,
-                cell->radius * 2
-            },
-            &(SDL_Rect) {
-                map->walls[i]->rect.x,
-                map->walls[i]->rect.y,
-                map->walls[i]->rect.w,
-                map->walls[i]->rect.h
-            }))
-        {
-            cell->isAlive = false;
-        }
-    }
+    // for (int i = 0; i < GAME_START_WALL_COUNT; i++)
+    // {
+    //     if (SDL_HasIntersection(
+    //         &(SDL_Rect) {
+    //             (int)cell->position.x - cell->radius,
+    //             (int)cell->position.y - cell->radius,
+    //             cell->radius * 2,
+    //             cell->radius * 2
+    //         },
+    //         &(SDL_Rect) {
+    //             map->walls[i]->rect.x,
+    //             map->walls[i]->rect.y,
+    //             map->walls[i]->rect.w,
+    //             map->walls[i]->rect.h
+    //         }))
+    //     {
+    //         cell->isAlive = false;
+    //     }
+    // }
 
     // Check cell collision with foods
     if (cell->frame % 10 == 0)
@@ -157,23 +159,42 @@ void Cell_update(Cell *cell, Map *map)
     }
 
     // Calculate wall rays
-    for (int i = 0; i < 7; i++)
+    // for (int i = 0; i < 7; i++)
+    // {
+    //     float distance = cell->raysWall[i].distanceMax;
+    //     for (int j = 0; j < GAME_START_WALL_COUNT; j++)
+    //     {
+    //         // Food rays are used to detect walls because they are the same
+    //         float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
+    //         if (newDistance < distance)
+    //             distance = newDistance;
+    //         if (newDistance < 0.0f)
+    //             distance = 0.0f;
+    //     }
+    //     cell->raysWall[i].distance = distance;
+    // }
+
+    // Calculate other cells rays
+    for (int i = 0; i < map->cellCount; i++)
     {
-        float distance = cell->raysWall[i].distanceMax;
-        for (int j = 0; j < WALL_COUNT; j++)
+        if (map->cells[i] == NULL || map->cells[i] == cell || !map->cells[i]->isAlive)
+            continue;
+
+        for (int j = 0; j < 7; j++)
         {
-            // Food rays are used to detect walls because they are the same
-            float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
+            float distance = cell->raysWall[i].distanceMax;
+            float newDistance = check_ray_collision(cell, &map->cells[i]->hitbox, j);
             if (newDistance < distance)
                 distance = newDistance;
             if (newDistance < 0.0f)
                 distance = 0.0f;
+            cell->raysWall[j].distance = distance;
         }
-        cell->raysWall[i].distance = distance;
     }
 }
 
 void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
 {
-    mutateNeuralNetwork(cell->nn, mutationRate, mutationProbability);
+    mutate_NeuralNetwork_Weights(cell->nn, mutationRate, mutationProbability);
+    mutate_NeuralNetwork_Topology(cell->nn, 20, 10, mutationProbability);
 }

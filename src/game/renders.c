@@ -16,7 +16,7 @@ void Game_render(SDL_Renderer *renderer, Map *map)
                 Cell_render(map->cells[i], map->renderer, map->renderRays, i == map->currentBestCellIndex);
 
         // Render walls
-        for (int i = 0; i < WALL_COUNT; ++i)
+        for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
             Wall_render(map->walls[i], map->renderer);
     }
 
@@ -33,13 +33,13 @@ void Game_render(SDL_Renderer *renderer, Map *map)
         Render_Text(map, COLOR_LIGHT_GRAY);
 
     // Zoom
-    SDL_RenderSetScale(renderer, map->zoomFactor, map->zoomFactor);
     SDL_RenderSetViewport(renderer, &(SDL_Rect) {
         -map->viewOffset.x,
         -map->viewOffset.y,
         map->width,
         map->height
     });
+    SDL_RenderSetScale(renderer, map->zoomFactor, map->zoomFactor);
 
     // Update screen
     SDL_RenderPresent(renderer);
@@ -100,12 +100,15 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "P: Pause/Unpause cells evolution");
     stringRGBA(map->renderer, 850, 150, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Return: Save best neural network");
+    sprintf(message, "R: Reset cells to last best cell");
     stringRGBA(map->renderer, 850, 175, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
+    sprintf(message, "Return: Save best neural network");
     stringRGBA(map->renderer, 850, 200, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Esc: Quit");
+    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
     stringRGBA(map->renderer, 850, 225, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Esc: Quit");
+    stringRGBA(map->renderer, 850, 250, message, color.r, color.g, color.b, color.a);
 }

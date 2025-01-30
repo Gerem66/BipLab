@@ -66,6 +66,7 @@ struct Cell
     bool goingRight;
 
     int radius;
+    SDL_FRect hitbox;
     SDL_Texture *sprite;
 };
 

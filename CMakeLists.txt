@@ -45,3 +45,11 @@ target_link_libraries(${PROJECT_NAME} SDL2::GFX)
 
 # Link the math library
 target_link_libraries(${PROJECT_NAME} m)
+
+# Set compiler flags for debug builds (-g for debug symbols)
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+
+# Optionally, set other flags for release (like optimizations)
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
