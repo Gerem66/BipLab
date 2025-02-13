@@ -1,15 +1,25 @@
-# Cells Evolution
+# BipLap
 
-## Dependencies
+## Description
 
-Install dependencies:
+BipLap est un projet de simulation d'évolution cellulaire qui permet de visualiser et d'étudier le comportement des BipBoup, des petites cellules virtuelles qui évoluent un environnement 2D.
+
+Le projet est développé en C et utilise la bibliothèque SDL2 pour le rendu graphique.
+
+Les BipBoup peuvent interagir entre eux et avec leur environnement, créant ainsi un écosystème dynamique et évolutif.
+L'objectif est d'observer l'émergence de comportements complexes à partir de règles simples.
+
+![BipBoup](./ressources/images/project_cellsevolution.gif)
+
+## Dépendances
+
 - [GCC](https://gcc.gnu.org/)
 - [CMake](https://cmake.org/download/)
 - [SDL2](https://www.libsdl.org/download-2.0.php)
 - [SDL2_image](https://www.libsdl.org/projects/SDL_image/)
 
 <details>
-<summary>Displays the installation controls specific to each OS</summary>
+<summary>Installation pour chaque OS</summary>
 
 ### Ubuntu
 ```bash
@@ -30,31 +40,23 @@ brew install gcc cmake sdl2 sdl2_image sdl2_ttf sdl2_net sdl2_mixer sdl2_gfx
 
 </details>
 
-## Command to start & use
-1. Init build:
+## Compilation
+
+1. Créer un dossier build et s'y rendre
 ```bash
 mkdir build ; cd build
 ```
 
-2. Start build & run
+2. Compiler le projet
 ```bash
 clear && cmake -DCMAKE_BUILD_TYPE=Debug .. && make && ./CellsEvolution
-
-# OR
-
-clear && cmake -DCMAKE_BUILD_TYPE=Release .. && make && ./CellsEvolution
 ```
 
-## Commands
-- `Mouse wheel` => Zoom/Dezoom & move view
-- `n` => Show/Hide neural network representation of the best cell
-- `r` => Go to next generation (disabled)
-- `t` => Show/Hide texts
-- `y` => Enable/Disable render of rays
-- `i` => Enable/Disable render of cells
-- `o` => Enable/Disable vertical sync
-- `p` => Pause/Unpause cells evolution
-- `Esc` => Quit
+OR
+
+```
+clear && cmake -DCMAKE_BUILD_TYPE=Release .. && make && ./CellsEvolution
+```
 
 ## References
 - [C - Basic SDL game](https://gitlab.com/aminosbh/basic-c-sdl-game.git)
