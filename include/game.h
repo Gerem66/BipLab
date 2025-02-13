@@ -4,9 +4,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
-#include <SDL.h>
-#include <SDL2_framerate.h>
-#include <SDL2_gfxPrimitives.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL2_framerate.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 typedef struct Map Map;
 
@@ -39,7 +39,8 @@ typedef struct Map Map;
 #define NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX 20
 
 // Settings
-#define CELL_USE_SPRITE     false
+#define CELL_USE_SPRITE     true
+#define CELL_AS_PLAYER      false
 #define CONTROLS_ZOOM_SPEED 0.2
 
 

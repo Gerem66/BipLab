@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // MacOS
 #if defined(__APPLE__)
@@ -71,7 +71,7 @@ struct Cell
 };
 
 
-Cell *Cell_create(SDL_Texture *texture, int x, int y, bool isAI);
+Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);
@@ -82,5 +82,9 @@ void Cell_destroy(Cell *cell);
 // Collisions
 bool check_rect_collision(Cell *cell, SDL_FRect *hitbox);
 float check_ray_collision(Cell *cell, SDL_FRect *hitbox, int rayIndex);
+
+// Sprite loading and management functions
+bool load_all_cell_sprites(SDL_Renderer *renderer);
+void free_cell_sprites(void);
 
 #endif // CELL_H

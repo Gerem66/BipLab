@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include <SDL.h>
-#include <SDL2_gfxPrimitives.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 typedef struct Food Food;
 

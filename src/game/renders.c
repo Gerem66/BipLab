@@ -2,7 +2,7 @@
 
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
-    Utils_setBackgroundColor(renderer, COLOR_BLACK);
+    Utils_setBackgroundColor(renderer, COLOR_DARK_GREEN);
 
     if (map->renderEnabled)
     {
@@ -68,6 +68,7 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
     stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
+#if CELL_AS_PLAYER
     // Player informations
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
     stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
@@ -80,6 +81,7 @@ void Render_Text(Map *map, SDL_Color color)
 
     sprintf(message, "Score: %d", map->cells[0]->score);
     stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+#endif
 
     // Render controls
     sprintf(message, "N: Show/Hide neural network");

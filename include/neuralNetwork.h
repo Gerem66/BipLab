@@ -1,9 +1,9 @@
 #ifndef NEURALNETWORK_H
 #define NEURALNETWORK_H
 
-#include <SDL.h>
-#include <SDL2_framerate.h>
-#include <SDL2_gfxPrimitives.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL2_framerate.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 typedef struct NeuralLayer NeuralLayer;
 typedef struct NeuralNetwork NeuralNetwork;

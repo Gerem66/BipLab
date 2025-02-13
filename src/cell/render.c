@@ -1,4 +1,134 @@
-#include "cell.h"
+#include "../../include/cell.h"
+
+// Global sprite structure to hold different cell part textures
+typedef struct {
+    SDL_Texture *skin;
+    SDL_Texture *leaf;
+    SDL_Texture *ass;
+    SDL_Texture *eyes;
+} CellSprites;
+
+// Global sprites for normal and shiny cells
+static CellSprites *normalSprites = NULL;
+static CellSprites *shinySprites = NULL;
+
+// Global flag to track sprite loading status
+static bool spritesLoaded = false;
+
+// Function prototypes to resolve implicit declaration errors
+void render_healthbar(Cell *cell, SDL_Renderer *renderer);
+void render_face(Cell *cell, SDL_Renderer *renderer);
+void render_rays(Cell *cell, SDL_Renderer *renderer);
+
+// Function to load cell sprites once at program start
+bool load_all_cell_sprites(SDL_Renderer *renderer) {
+    // Prevent reloading
+    if (spritesLoaded) {
+        return true;
+    }
+
+    // Check if cell sprites are used
+    if (!CELL_USE_SPRITE) {
+        fprintf(stderr, "Cell sprites are not used\n");
+        return true;
+    }
+
+    // Ensure renderer is valid
+    if (!renderer) {
+        fprintf(stderr, "Invalid renderer for sprite loading\n");
+        return false;
+    }
+
+    // Allocate memory safely
+    normalSprites = calloc(1, sizeof(CellSprites));
+    if (!normalSprites) {
+        fprintf(stderr, "Failed to allocate memory for normal sprites\n");
+        return false;
+    }
+
+    shinySprites = calloc(1, sizeof(CellSprites));
+    if (!shinySprites) {
+        fprintf(stderr, "Failed to allocate memory for shiny sprites\n");
+        free(normalSprites);
+        normalSprites = NULL;
+        return false;
+    }
+
+    char basePath[256];
+    char fullPath[512];
+    
+    // Load normal sprites
+    snprintf(basePath, sizeof(basePath), "../ressources/bipboup/normal/");
+    
+    snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
+    normalSprites->skin = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
+    normalSprites->leaf = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
+    normalSprites->ass = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
+    normalSprites->eyes = IMG_LoadTexture(renderer, fullPath);
+
+    // Load shiny sprites
+    snprintf(basePath, sizeof(basePath), "../ressources/bipboup/shiny/");
+    
+    snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
+    shinySprites->skin = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
+    shinySprites->leaf = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
+    shinySprites->ass = IMG_LoadTexture(renderer, fullPath);
+    
+    snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
+    shinySprites->eyes = IMG_LoadTexture(renderer, fullPath);
+
+    // Verify loading
+    if (!normalSprites->skin || !normalSprites->leaf || !normalSprites->ass || !normalSprites->eyes ||
+        !shinySprites->skin || !shinySprites->leaf || !shinySprites->ass || !shinySprites->eyes) {
+        fprintf(stderr, "Failed to load one or more cell textures\n");
+        free_cell_sprites();
+        return false;
+    }
+
+    // Mark sprites as loaded
+    spritesLoaded = true;
+    return true;
+}
+
+// Function to check if sprites are loaded
+bool are_cell_sprites_loaded() {
+    return spritesLoaded;
+}
+
+// Function to free sprites when no longer needed
+void free_cell_sprites() {
+    if (!spritesLoaded) return;
+
+    if (normalSprites) {
+        if (normalSprites->skin) SDL_DestroyTexture(normalSprites->skin);
+        if (normalSprites->leaf) SDL_DestroyTexture(normalSprites->leaf);
+        if (normalSprites->ass) SDL_DestroyTexture(normalSprites->ass);
+        if (normalSprites->eyes) SDL_DestroyTexture(normalSprites->eyes);
+        free(normalSprites);
+        normalSprites = NULL;
+    }
+
+    if (shinySprites) {
+        if (shinySprites->skin) SDL_DestroyTexture(shinySprites->skin);
+        if (shinySprites->leaf) SDL_DestroyTexture(shinySprites->leaf);
+        if (shinySprites->ass) SDL_DestroyTexture(shinySprites->ass);
+        if (shinySprites->eyes) SDL_DestroyTexture(shinySprites->eyes);
+        free(shinySprites);
+        shinySprites = NULL;
+    }
+
+    spritesLoaded = false;
+}
 
 void render_healthbar(Cell *cell, SDL_Renderer *renderer)
 {
@@ -52,7 +182,7 @@ void render_rays(Cell *cell, SDL_Renderer *renderer)
                                 COLOR_RED.r,
                                 COLOR_RED.g,
                                 COLOR_RED.b,
-                                COLOR_RED.a);
+                                COLOR_RED.a / 4);
         }
         else
         {
@@ -60,7 +190,7 @@ void render_rays(Cell *cell, SDL_Renderer *renderer)
                                 COLOR_WHITE.r,
                                 COLOR_WHITE.g,
                                 COLOR_WHITE.b,
-                                COLOR_WHITE.a);
+                                COLOR_WHITE.a / 4);
         }
 
         // Render ray
@@ -89,31 +219,72 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
     if (!cell->isAlive)
         return;
 
-    // Render filled circle
-    if (isSelected)
-    {
-        SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
-        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
-        render_face(cell, renderer);
+    // Render based on CELL_USE_SPRITE flag
+    if (!CELL_USE_SPRITE) {
+        // Simple rendering without sprites
+        if (isSelected)
+        {
+            SDL_SetRenderDrawColor(renderer, COLOR_ORANGE.r, COLOR_ORANGE.g, COLOR_ORANGE.b, COLOR_ORANGE.a);
+            SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+            render_face(cell, renderer);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer, COLOR_VIOLET.r, COLOR_VIOLET.g, COLOR_VIOLET.b, COLOR_VIOLET.a);
+            SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
+            render_face(cell, renderer);
+        }
     }
-    else if (cell->sprite != NULL)
-    {
-        // Draw sprite
+    else {
+        // Ensure sprites are loaded
+        if (!spritesLoaded) {
+            fprintf(stderr, "Sprites not loaded. Call load_all_cell_sprites() first.\n");
+            return;
+        }
+
+        // Use shiny sprites for selected cell (best score)
+        CellSprites *sprites = isSelected ? shinySprites : normalSprites;
+
+        // Calcul de l'angle en radians
+        float rad = cell->angle * PI / 180.0f;
+
+        // Déterminer la texture à afficher : si l'angle est inférieur à 180°, on considère que la cellule regarde vers le bas (affiche les yeux)
+        // sinon elle regarde vers le haut (affiche l'arrière "ass")
+        bool showEyes = (cell->angle < 180);
+
+        // Calcul de l'offset horizontal basé sur la composante horizontale
+        // Lorsque cell->angle == 0, cos(0)=1 (offset max positif), et pour cell->angle == 180, cos(180)=-1 (offset max négatif)
+        float tOffset = (cos(rad) + 1.0f) / 2.0f;
+        float maxOffset = cell->radius * 0.4f;
+        int offsetX = (int)(((tOffset - 0.5f) * 2.0f) * maxOffset);
+
         int radius = cell->radius * 1.5;
-        int angle = cell->angle + 90;
-        SDL_Rect positionFond = {
+        SDL_Rect destRect = {
             cell->position.x - radius,
             cell->position.y - radius,
             radius * 2,
             radius * 2
         };
-        SDL_RenderCopyEx(renderer, cell->sprite, NULL, &positionFond, angle, NULL, SDL_FLIP_NONE);
-    }
-    else
-    {
-        SDL_SetRenderDrawColor(renderer, COLOR_VIOLET.r, COLOR_VIOLET.g, COLOR_VIOLET.b, COLOR_VIOLET.a);
-        SDL_RenderFillCircle(renderer, cell->position.x, cell->position.y, cell->radius);
-        render_face(cell, renderer);
+
+        SDL_RendererFlip flip = SDL_FLIP_NONE;
+
+        // Affichage de la peau, toujours présente
+        SDL_RenderCopyEx(renderer, sprites->skin, NULL, &destRect, 0, NULL, flip);
+
+        if (showEyes) {
+            // Lorsque la cellule regarde vers le bas (angle < 180°), afficher les yeux
+            SDL_Rect eyesRect = destRect;
+            eyesRect.x += offsetX;
+            SDL_RenderCopyEx(renderer, sprites->eyes, NULL, &eyesRect, 0, NULL, flip);
+        } else {
+            // Lorsque la cellule regarde vers le haut (angle >= 180°), afficher l'arrière (ass) avec le décalage inversé
+            SDL_Rect assRect = destRect;
+            assRect.x -= offsetX;
+            SDL_RenderCopyEx(renderer, sprites->ass, NULL, &assRect, 0, NULL, flip);
+        }
+
+        // Toujours afficher la feuille par-dessus
+        SDL_RenderCopyEx(renderer, sprites->leaf, NULL, &destRect, 0, NULL, flip);
     }
 
     render_healthbar(cell, renderer);

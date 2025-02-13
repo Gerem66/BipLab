@@ -17,6 +17,7 @@ void Game_events(Map *map, SDL_Event *event)
             case SDLK_ESCAPE:
                 map->quit = true;
                 break;
+#if CELL_AS_PLAYER
             case SDLK_z:
                 map->cells[0]->goingUp = true;
                 break;
@@ -29,6 +30,7 @@ void Game_events(Map *map, SDL_Event *event)
             case SDLK_d:
                 map->cells[0]->goingRight = true;
                 break;
+#endif
             case SDLK_n:
                 map->renderNeuralNetwork = !map->renderNeuralNetwork;
                 break;
@@ -64,6 +66,7 @@ void Game_events(Map *map, SDL_Event *event)
 
     else if (event->type == SDL_KEYUP)
     {
+#if CELL_AS_PLAYER
         switch(event->key.keysym.sym)
         {
             case SDLK_z:
@@ -81,6 +84,7 @@ void Game_events(Map *map, SDL_Event *event)
             default:
                 break;
         }
+#endif
     }
 
     if (event->type == SDL_MOUSEWHEEL) {

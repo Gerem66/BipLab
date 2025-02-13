@@ -8,6 +8,7 @@ const SDL_Color COLOR_BLACK         = {0, 0, 0, 255};
 const SDL_Color COLOR_WHITE         = {255, 255, 255, 255};
 const SDL_Color COLOR_GRAY          = {100, 100, 100, 255};
 const SDL_Color COLOR_DARK_GRAY     = {30, 30, 30, 255};
+const SDL_Color COLOR_DARK_GREEN     = {5, 51, 41, 255};
 const SDL_Color COLOR_LIGHT_GRAY    = {200, 200, 200, 255};
 const SDL_Color COLOR_RED           = {255, 0, 0, 255};
 const SDL_Color COLOR_GREEN         = {0, 255, 0, 255};

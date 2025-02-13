@@ -2,7 +2,7 @@
 #define UTILS_H
 
 #include <stdbool.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // MacOS
 #if defined(__APPLE__)
@@ -28,6 +28,7 @@ extern const SDL_Color COLOR_BLACK;
 extern const SDL_Color COLOR_WHITE;
 extern const SDL_Color COLOR_GRAY;
 extern const SDL_Color COLOR_DARK_GRAY;
+extern const SDL_Color COLOR_DARK_GREEN;
 extern const SDL_Color COLOR_LIGHT_GRAY;
 extern const SDL_Color COLOR_RED;
 extern const SDL_Color COLOR_GREEN;

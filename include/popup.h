@@ -1,7 +1,7 @@
 #ifndef POPUP_H
 #define POPUP_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 
 int open_popup_ask(char *title, char *message);

@@ -21,7 +21,6 @@ void Cell_reset(Cell *cell)
 
 void Cell_destroy(Cell *cell)
 {
-    freeSprite(cell->sprite);
     freeNeuralNetwork(cell->nn);
     free(cell);
 }

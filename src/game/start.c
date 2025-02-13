@@ -1,7 +1,48 @@
-#include "game.h"
+#include "../../include/game.h"
+#include "../../include/cell.h"
+#include <dirent.h>
+#include <sys/types.h>
+#include <unistd.h>  // For getcwd()
+
+// Debug function to list files in a directory
+void list_directory_files(const char *path) {
+    DIR *dir;
+    struct dirent *entry;
+
+    printf("Listing files in directory: %s\n", path);
+    
+    dir = opendir(path);
+    if (dir == NULL) {
+        printf("Unable to open directory\n");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        // Check if the entry is a file by checking its name
+        if (entry->d_name[0] != '.' && 
+            strstr(entry->d_name, ".png") != NULL) {
+            printf("  - %s\n", entry->d_name);
+        }
+    }
+
+    closedir(dir);
+}
 
 bool Game_start(SDL_Renderer *renderer, int w, int h)
 {
+    // Debug: Print current working directory
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Current working directory: %s\n", cwd);
+    } else {
+        perror("Error getting current working directory");
+    }
+
+    // Debug: List files in bipboup directories
+    printf("Checking bipboup sprite directories:\n");
+    list_directory_files("ressources/bipboup/normal");
+    list_directory_files("ressources/bipboup/shiny");
+
     Map map;
     map.width = w;
     map.height = h;
@@ -74,11 +115,26 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             continue;
         }
 
-        // Load cell sprite
+        // Load cell sprite if sprite rendering is enabled
         SDL_Texture *sprite = NULL;
-        if (CELL_USE_SPRITE)
-            sprite = LoadSprite(renderer, "../ressources/cell.png");
-        map.cells[i] = Cell_create(sprite, map.width / 2, map.height / 2, i > 0);
+        if (CELL_USE_SPRITE) {
+            char spritePath[256];
+            snprintf(spritePath, sizeof(spritePath), "../ressources/bipboup/normal/skin.png");
+            
+            // Debug: Print full sprite path
+            printf("Attempting to load sprite: %s\n", spritePath);
+            
+            sprite = IMG_LoadTexture(renderer, spritePath);
+            
+            if (sprite == NULL) {
+                printf("Failed to load sprite: %s\n", IMG_GetError());
+            } else {
+                printf("Successfully loaded sprite\n");
+            }
+        }
+
+        // Create cell with sprite
+        map.cells[i] = Cell_create(sprite, map.width / 2, map.height / 2, !CELL_AS_PLAYER || i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
@@ -91,7 +147,13 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize best cell ever
-    map.bestCellEver = Cell_create(NULL, map.width / 2, map.height / 2, false);
+    SDL_Texture *bestSprite = NULL;
+    if (CELL_USE_SPRITE) {
+        char spritePath[256];
+        snprintf(spritePath, sizeof(spritePath), "../ressources/bipboup/shiny/skin.png");
+        bestSprite = IMG_LoadTexture(renderer, spritePath);
+    }
+    map.bestCellEver = Cell_create(bestSprite, map.width / 2, map.height / 2, false);
 
     // Load a neural network if file exists
     char filename[] = "../ressources/best.nn";
@@ -133,8 +195,17 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         nn = NULL;
     }
 
+    // Load cell sprites if sprite rendering is enabled
+    if (CELL_USE_SPRITE) {
+        printf("Attempting to load all cell sprites\n");
+        if (!load_all_cell_sprites(renderer)) {
+            fprintf(stderr, "Failed to load cell sprites!\n");
+            return false;
+        }
+    }
+
     // Initialize framerate manager
-    const int FPS = 120;
+    const int FPS = 120 / 2;
     FPSmanager fpsmanager;
     SDL_initFramerate(&fpsmanager);
     SDL_setFramerate(&fpsmanager, FPS);
@@ -156,6 +227,11 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Delay
         if (map.verticalSync)
             SDL_framerateDelay(&fpsmanager);
+    }
+
+    // Free cell sprites if they were loaded
+    if (CELL_USE_SPRITE) {
+        free_cell_sprites();
     }
 
     int popup_save_result = open_popup_ask(
