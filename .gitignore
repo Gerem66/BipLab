@@ -11,6 +11,7 @@ CMakeLists.txt.*
 
 # Code
 *.nn
+!ressources/best.nn
 
 # MacOS
 .DS_Store
