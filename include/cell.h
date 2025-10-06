@@ -47,7 +47,7 @@ struct Cell
     bool isAI;
     NeuralNetwork *nn;
     double inputs[15];
-    double outputs[4];
+    double outputs[2];
 
     SDL_FPoint position;
     SDL_FPoint positionInit;
@@ -56,7 +56,6 @@ struct Cell
     float angleVelocityMax;
 
     float speed;
-    float speedMin;
     float speedMax;
     float velocity;
 
@@ -73,7 +72,7 @@ struct Cell
 
 Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
-void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability);
+void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability, float topologyMutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);
 void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected);
 void Cell_reset(Cell *cell);

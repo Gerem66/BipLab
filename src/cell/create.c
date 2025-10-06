@@ -17,7 +17,6 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->framePerHealth = 20;
     cell->birthCostMax = 40;
 
-    cell->speedMin = -2.0f;
     cell->speedMax = 3.0f;
     cell->velocity = 0.4f;
     cell->angleVelocity = 4.0f;
@@ -105,7 +104,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
 
     freeNeuralNetwork(newCell->nn);
     newCell->nn = newNN;
-    Cell_mutate(newCell, 0.3f, 0.05f);
+    Cell_mutate(newCell, NEURAL_NETWORK_CHILD_MUTATION_RATE, NEURAL_NETWORK_CHILD_MUTATION_PROB, NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);

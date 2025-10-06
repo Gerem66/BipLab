@@ -53,7 +53,12 @@ void Game_reset(Map *map, bool fullReset)
         Cell_reset(map->cells[bestIndex]);
         freeNeuralNetwork(map->cells[bestIndex]->nn);
         map->cells[bestIndex]->nn = newNN;
-        Cell_mutate(map->cells[bestIndex], 0.2f, 0.2f);
+        Cell_mutate(
+            map->cells[bestIndex],
+            NEURAL_NETWORK_RESET_MUTATION_RATE,
+            NEURAL_NETWORK_RESET_MUTATION_PROB,
+            NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY
+        );
 
         revived++;
     }

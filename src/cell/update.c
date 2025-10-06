@@ -36,46 +36,73 @@ void Cell_update(Cell *cell, Map *map)
     {
         processInputs(cell->nn, cell->inputs, cell->outputs);
 
-        cell->goingUp = cell->outputs[0] > 0.5;
-        cell->goingDown = cell->outputs[1] > 0.5;
-        cell->goingLeft = cell->outputs[2] > 0.5;
-        cell->goingRight = cell->outputs[3] > 0.5;
-    }
-
-    // Update angle
-    if (cell->goingLeft)
-    {
-        cell->angle -= cell->angleVelocity;
+        // Update angle (contrôle continu basé sur outputs[1])
+        cell->angle += cell->outputs[1] * cell->angleVelocity;
         if (cell->angle < 0.0f)
             cell->angle += 360.0f;
-    }
-    else if (cell->goingRight)
-    {
-        cell->angle += cell->angleVelocity;
-        if (cell->angle > 360.0f)
+        else if (cell->angle >= 360.0f)
             cell->angle -= 360.0f;
-    }
 
-    // Update speed
-    if (cell->goingUp)
-    {
-        cell->speed += cell->velocity;
+        // Calcul direct de la vitesse cible basée sur la sortie (-1 à 1)
+        float targetSpeed = cell->outputs[0] * cell->speedMax;
+        if (cell->outputs[0] < 0)
+            targetSpeed /= 2;
+
+        float speedDiff = targetSpeed - cell->speed;
+        float maxSpeedChange = cell->velocity;
+
+        if (fabs(speedDiff) > maxSpeedChange)
+        {
+            cell->speed += (speedDiff > 0) ? maxSpeedChange : -maxSpeedChange;
+        }
+        else
+        {
+            cell->speed = targetSpeed;
+        }
+
+        // Sécurité : limiter dans les bornes
+        cell->speed = MAX(cell->speed, -cell->speedMax / 2);
         cell->speed = MIN(cell->speed, cell->speedMax);
     }
-    else if (cell->goingDown)
+
+    // Mode manuel
+    else
     {
-        cell->speed -= cell->velocity;
-        cell->speed = MAX(cell->speed, cell->speedMin);
-    }
-    else if (cell->speed > 0.0f)
-    {
-        cell->speed -= cell->velocity;
-        cell->speed = MAX(cell->speed, 0.0f);
-    }
-    else if (cell->speed < 0.0f)
-    {
-        cell->speed += cell->velocity;
-        cell->speed = MIN(cell->speed, 0.0f);
+        // Rotation
+        if (cell->goingLeft)
+        {
+            cell->angle -= cell->angleVelocity;
+            if (cell->angle < 0.0f)
+                cell->angle += 360.0f;
+        }
+        else if (cell->goingRight)
+        {
+            cell->angle += cell->angleVelocity;
+            if (cell->angle > 360.0f)
+                cell->angle -= 360.0f;
+        }
+
+        // Update speed (contrôle continu basé sur outputs[0])
+        if (cell->goingUp)
+        {
+            cell->speed += cell->velocity;
+            cell->speed = MIN(cell->speed, cell->speedMax);
+        }
+        else if (cell->goingDown)
+        {
+            cell->speed -= cell->velocity;
+            cell->speed = MAX(cell->speed, cell->speedMax / 2);
+        }
+        if (cell->speed > 0.0f)
+        {
+            cell->speed -= cell->velocity;
+            cell->speed = MAX(cell->speed, 0.0f);
+        }
+        else if (cell->speed < 0.0f)
+        {
+            cell->speed += cell->velocity;
+            cell->speed = MIN(cell->speed, 0.0f);
+        }
     }
 
     // Update position
@@ -193,8 +220,13 @@ void Cell_update(Cell *cell, Map *map)
     }
 }
 
-void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
+void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability, float topologyMutationProbability)
 {
     mutate_NeuralNetwork_Weights(cell->nn, mutationRate, mutationProbability);
-    mutate_NeuralNetwork_Topology(cell->nn, 20, 10, mutationProbability);
+    mutate_NeuralNetwork_Topology(
+        cell->nn,
+        NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX,
+        NEURAL_NETWORK_TOPOLOGY_LAYER_SIZE_MAX,
+        topologyMutationProbability
+    );
 }
