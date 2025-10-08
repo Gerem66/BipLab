@@ -104,7 +104,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
 
     freeNeuralNetwork(newCell->nn);
     newCell->nn = newNN;
-    Cell_mutate(newCell, NEURAL_NETWORK_CHILD_MUTATION_RATE, NEURAL_NETWORK_CHILD_MUTATION_PROB, NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY);
+    Cell_mutate(newCell, NEURAL_NETWORK_CHILD_MUTATION_RATE, NEURAL_NETWORK_CHILD_MUTATION_PROB);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);

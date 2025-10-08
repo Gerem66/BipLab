@@ -56,8 +56,7 @@ void Game_reset(Map *map, bool fullReset)
         Cell_mutate(
             map->cells[bestIndex],
             NEURAL_NETWORK_RESET_MUTATION_RATE,
-            NEURAL_NETWORK_RESET_MUTATION_PROB,
-            NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY
+            NEURAL_NETWORK_RESET_MUTATION_PROB
         );
 
         revived++;

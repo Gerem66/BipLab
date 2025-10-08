@@ -62,8 +62,8 @@ struct Cell
 
     bool isAI;
     NeuralNetwork *nn;
-    double inputs[43]; // 1 health + 7 rays * 6 features
-    double outputs[2]; // acceleration + rotation
+    double inputs[44]; // 1 health + 1 can_reproduce + 7 rays * 6 features
+    double outputs[3]; // acceleration + rotation + reproduction
 
     SDL_FPoint position;
     SDL_FPoint positionInit;
@@ -88,7 +88,7 @@ struct Cell
 
 Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
-void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability, float topologyMutationProbability);
+void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);
 void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSelected);
 void Cell_reset(Cell *cell);

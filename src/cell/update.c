@@ -34,13 +34,16 @@ void Cell_update(Cell *cell, Map *map)
             cell->isAlive = false;
     }
 
-    // === Input encoding: 7 rays with 6 features each ===
+    // === Input encoding: health + reproduction_possible + 7 rays with 6 features each ===
     // Ray features: [distance_norm, state_norm, onehot_empty, onehot_food, onehot_agent, onehot_wall]
 
     // Input 0: normalized health
     cell->inputs[0] = CLAMP01((double)cell->health / (double)cell->healthMax);
 
-    int idx = 1; // start after self health
+    // Input 1: reproduction possible (1.0 if health > min_health, 0.0 otherwise)
+    cell->inputs[1] = (cell->health > CELL_BIRTH_MIN_HEALTH) ? 1.0 : 0.0;
+
+    int idx = 2; // start after health and reproduction_possible
     for (int i = 0; i < NUM_RAYS; ++i){
         const Ray* r = &cell->rays[i];
 
@@ -61,7 +64,7 @@ void Cell_update(Cell *cell, Map *map)
         set_onehot(&cell->inputs[idx], kind);
         idx += 4;
     }
-    // Total inputs: 1 + NUM_RAYS * FEAT_PER_RAY = 43
+    // Total inputs: 1 health + 1 reproduction_possible + NUM_RAYS * FEAT_PER_RAY = 44
 
     // Process neural network
     if (cell->isAI)
@@ -95,6 +98,32 @@ void Cell_update(Cell *cell, Map *map)
         // Clamp speed within bounds
         cell->speed = MAX(cell->speed, -cell->speedMax / 2);
         cell->speed = MIN(cell->speed, cell->speedMax);
+
+        // Check for reproduction output (outputs[2])
+        if (cell->outputs[2] > 0.5)
+        {
+            if (cell->health > CELL_BIRTH_MIN_HEALTH)
+            {
+                // Successful reproduction
+                // Sacrifice health for reproduction
+                cell->health -= CELL_BIRTH_HEALTH_SACRIFICE;
+
+                // Give score bonus for successful reproduction attempt
+                cell->score += CELL_BIRTH_SCORE_BONUS;
+
+                // Create new cell
+                Cell_GiveBirth(cell, map);
+            }
+            else
+            {
+                // Failed reproduction attempt - apply penalty
+                cell->health -= CELL_BIRTH_FAILED_PENALTY;
+
+                // Ensure cell doesn't die from penalty if it was close to 0
+                if (cell->health < 1)
+                    cell->health = 1;
+            }
+        }
     }
 
     // Manual control mode
@@ -194,10 +223,6 @@ void Cell_update(Cell *cell, Map *map)
                         map->foods[i]->rect.x = rand() % (map->width - 100) + 50;
                         map->foods[i]->rect.y = rand() % (map->height - 100) + 50;
                     }
-
-                    // New cell
-                    if (cell->score % cell->birthCostMax == 0)
-                        Cell_GiveBirth(cell, map);
                 }
             }
         }
@@ -245,13 +270,13 @@ void Cell_update(Cell *cell, Map *map)
     }
 }
 
-void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability, float topologyMutationProbability)
+void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
 {
     mutate_NeuralNetwork_Weights(cell->nn, mutationRate, mutationProbability);
     mutate_NeuralNetwork_Topology(
         cell->nn,
         NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX,
         NEURAL_NETWORK_TOPOLOGY_LAYER_SIZE_MAX,
-        topologyMutationProbability
+        NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY
     );
 }
