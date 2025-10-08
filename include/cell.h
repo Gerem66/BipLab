@@ -22,19 +22,35 @@ typedef struct Cell Cell;
 #include "wall.h"
 #include "utils.h"
 
+#define NUM_RAYS 7
+#define FEAT_PER_RAY 6
+
+
+typedef enum {
+    RAY_OBJECT_NONE = 0,
+    RAY_OBJECT_FOOD = 1,
+    RAY_OBJECT_CELL = 2,
+    RAY_OBJECT_WALL = 3
+} RayObjectType;
+
+typedef struct {
+    RayObjectType type;
+    float distance;
+    float value;
+} RayHit;
 
 struct Ray
 {
     float angle;
     float distance;
     float distanceMax;
+    RayHit hit;
 };
 struct Cell
 {
     bool isAlive;
     int score; // eatenFood
     Ray rays[7];
-    Ray raysWall[7];
     int generation;
 
     int health;
@@ -46,8 +62,8 @@ struct Cell
 
     bool isAI;
     NeuralNetwork *nn;
-    double inputs[15];
-    double outputs[2];
+    double inputs[43]; // 1 health + 7 rays * 6 features
+    double outputs[2]; // acceleration + rotation
 
     SDL_FPoint position;
     SDL_FPoint positionInit;

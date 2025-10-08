@@ -22,11 +22,6 @@ void freeNeuralLayer(NeuralLayer *layer)
     free(layer);
 }
 
-double randomWeight(double minValue, double maxValue)
-{
-    return minValue + (double)rand() / ((double)RAND_MAX / (maxValue - minValue));
-}
-
 void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue)
 {
     for (int i = 0; i < nn->topologySize - 1; i++)
@@ -34,7 +29,7 @@ void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue)
         NeuralLayer *layer = nn->layers[i];
         for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++)
         {
-            layer->weights[j] = randomWeight(minValue, maxValue);
+            layer->weights[j] = drand(minValue, maxValue);
         }
     }
 }
@@ -90,6 +85,8 @@ NeuralNetwork *NeuralNetwork_Copy(NeuralNetwork *parent)
     {
         NeuralLayer *newLayer = newNN->layers[i];
         NeuralLayer *parentLayer = parent->layers[i];
+
+        // Copy the weights
         for (int j = 0; j < newLayer->neuronCount * newLayer->nextLayerNeuronCount; j++)
         {
             newLayer->weights[j] = parentLayer->weights[j];
@@ -127,11 +124,13 @@ void mutate_NeuralNetwork_Weights(NeuralNetwork *nn, double mutationRate, float 
     for (int i = 0; i < nn->topologySize - 1; i++)
     {
         NeuralLayer *layer = nn->layers[i];
+
+        // Weight mutation
         for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++)
         {
             if (rand() / (double)RAND_MAX < mutationProbability)
             {
-                layer->weights[j] += randomWeight(-mutationRate, mutationRate);
+                layer->weights[j] += drand(-mutationRate, mutationRate);
             }
         }
     }

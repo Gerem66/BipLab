@@ -93,7 +93,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             map.foods[i] = NULL;
             continue;
         }
-        map.foods[i] = Food_init(Utils_rand(0, map.width), Utils_rand(0, map.height));
+        map.foods[i] = Food_init(irand(0, map.width), irand(0, map.height));
         if (map.foods[i] == NULL)
         {
             fprintf(stderr, "Error while initializing food %d !\n", i);

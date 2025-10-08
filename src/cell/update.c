@@ -1,5 +1,25 @@
 #include "cell.h"
 
+// === Helper functions for input encoding ===
+enum HitKind { HK_EMPTY=0, HK_FOOD=1, HK_AGENT=2, HK_WALL=3 };
+
+static inline void set_onehot(double* out4, int k){
+    out4[0] = out4[1] = out4[2] = out4[3] = 0.0;
+    if (k >= 0 && k < 4) out4[k] = 1.0;
+}
+
+// Normalize "value" field depending on hit kind:
+// - FOOD:   value = raw food amount -> normalize by FOOD_MAX_LIMIT
+// - AGENT:  value = raw health -> normalize by agentMaxEnergy
+// - others: 0
+static inline double norm_value_for(const RayHit* h, double agentMaxEnergy, double foodMaxValue){
+    switch ((int)h->type){
+        case HK_FOOD:  return CLAMP01(h->value / foodMaxValue);
+        case HK_AGENT: return CLAMP01(h->value / agentMaxEnergy);
+        default:       return 0.0;
+    }
+}
+
 void Cell_update(Cell *cell, Map *map)
 {
     if (!cell->isAlive)
@@ -14,36 +34,48 @@ void Cell_update(Cell *cell, Map *map)
             cell->isAlive = false;
     }
 
-    // Update inputs
-    cell->inputs[0] = (double)cell->health / (double)cell->healthMax,
-    cell->inputs[1] = (double)(1 - cell->rays[0].distance / cell->rays[0].distanceMax);
-    cell->inputs[2] = (double)(1 - cell->rays[1].distance / cell->rays[1].distanceMax);
-    cell->inputs[3] = (double)(1 - cell->rays[2].distance / cell->rays[2].distanceMax);
-    cell->inputs[4] = (double)(1 - cell->rays[3].distance / cell->rays[3].distanceMax);
-    cell->inputs[5] = (double)(1 - cell->rays[4].distance / cell->rays[4].distanceMax);
-    cell->inputs[6] = (double)(1 - cell->rays[5].distance / cell->rays[5].distanceMax);
-    cell->inputs[7] = (double)(1 - cell->rays[6].distance / cell->rays[6].distanceMax);
-    cell->inputs[8] = (double)(1 - cell->raysWall[0].distance / cell->raysWall[0].distanceMax);
-    cell->inputs[9] = (double)(1 - cell->raysWall[1].distance / cell->raysWall[1].distanceMax);
-    cell->inputs[10] = (double)(1 - cell->raysWall[2].distance / cell->raysWall[2].distanceMax);
-    cell->inputs[11] = (double)(1 - cell->raysWall[3].distance / cell->raysWall[3].distanceMax);
-    cell->inputs[12] = (double)(1 - cell->raysWall[4].distance / cell->raysWall[4].distanceMax);
-    cell->inputs[13] = (double)(1 - cell->raysWall[5].distance / cell->raysWall[5].distanceMax);
-    cell->inputs[14] = (double)(1 - cell->raysWall[6].distance / cell->raysWall[6].distanceMax);
+    // === Input encoding: 7 rays with 6 features each ===
+    // Ray features: [distance_norm, state_norm, onehot_empty, onehot_food, onehot_agent, onehot_wall]
 
-    // Update outputs
+    // Input 0: normalized health
+    cell->inputs[0] = CLAMP01((double)cell->health / (double)cell->healthMax);
+
+    int idx = 1; // start after self health
+    for (int i = 0; i < NUM_RAYS; ++i){
+        const Ray* r = &cell->rays[i];
+
+        bool hasHit = (r->hit.distance >= 0.0) && (r->hit.distance < r->distanceMax);
+
+        int kind = hasHit ? (int)r->hit.type : HK_EMPTY;
+        if (kind < 0 || kind > HK_WALL) kind = HK_EMPTY;
+
+        // Distance normalized (1.0 if no hit)
+        double dist_norm = hasHit ? CLAMP01(r->hit.distance / (r->distanceMax > 0.0 ? r->distanceMax : 1.0)) : 1.0;
+        cell->inputs[idx++] = dist_norm;
+
+        // State value normalized by object type
+        double state_norm = hasHit ? norm_value_for(&r->hit, (double)cell->healthMax, (double)FOOD_MAX_LIMIT) : 0.0;
+        cell->inputs[idx++] = state_norm;
+
+        // One-hot encoding for object type
+        set_onehot(&cell->inputs[idx], kind);
+        idx += 4;
+    }
+    // Total inputs: 1 + NUM_RAYS * FEAT_PER_RAY = 43
+
+    // Process neural network
     if (cell->isAI)
     {
         processInputs(cell->nn, cell->inputs, cell->outputs);
 
-        // Update angle (contrôle continu basé sur outputs[1])
+        // Update angle from neural output
         cell->angle += cell->outputs[1] * cell->angleVelocity;
         if (cell->angle < 0.0f)
             cell->angle += 360.0f;
         else if (cell->angle >= 360.0f)
             cell->angle -= 360.0f;
 
-        // Calcul direct de la vitesse cible basée sur la sortie (-1 à 1)
+        // Calculate target speed from neural output (-1 to 1)
         float targetSpeed = cell->outputs[0] * cell->speedMax;
         if (cell->outputs[0] < 0)
             targetSpeed /= 2;
@@ -60,12 +92,12 @@ void Cell_update(Cell *cell, Map *map)
             cell->speed = targetSpeed;
         }
 
-        // Sécurité : limiter dans les bornes
+        // Clamp speed within bounds
         cell->speed = MAX(cell->speed, -cell->speedMax / 2);
         cell->speed = MIN(cell->speed, cell->speedMax);
     }
 
-    // Mode manuel
+    // Manual control mode
     else
     {
         // Rotation
@@ -82,7 +114,7 @@ void Cell_update(Cell *cell, Map *map)
                 cell->angle -= 360.0f;
         }
 
-        // Update speed (contrôle continu basé sur outputs[0])
+        // Speed control
         if (cell->goingUp)
         {
             cell->speed += cell->velocity;
@@ -111,7 +143,7 @@ void Cell_update(Cell *cell, Map *map)
     cell->hitbox.x = cell->position.x - cell->radius;
     cell->hitbox.y = cell->position.y - cell->radius;
 
-    // Cell out of bounds
+    // Handle world boundaries (wrap around)
     if (cell->position.x < 0.0f)
         cell->position.x = map->width;
     else if (cell->position.x > map->width)
@@ -155,9 +187,10 @@ void Cell_update(Cell *cell, Map *map)
                     cell->score++;
                     cell->health++;
                     map->foods[i]->value--;
+
                     if (map->foods[i]->value <= 0)
                     {
-                        map->foods[i]->value = 20;
+                        map->foods[i]->value = FOOD_MAX_LIMIT;
                         map->foods[i]->rect.x = rand() % (map->width - 100) + 50;
                         map->foods[i]->rect.y = rand() % (map->height - 100) + 50;
                     }
@@ -170,53 +203,45 @@ void Cell_update(Cell *cell, Map *map)
         }
     }
 
-    // Calculate food rays
+    // Ray casting for object detection
     for (int i = 0; i < 7; i++)
     {
-        float distance = cell->rays[i].distanceMax;
+        float closestDistance = cell->rays[i].distanceMax;
+        RayObjectType closestType = RAY_OBJECT_NONE;
+        float closestValue = 0.0f;
+
+        // Check food collisions
         for (int j = 0; j < GAME_START_FOOD_COUNT; j++)
         {
-            float newDistance = check_ray_collision(cell, &map->foods[j]->rect, i);
-            if (newDistance < distance)
-                distance = newDistance;
-            if (newDistance < 0.0f)
-                distance = 0.0f;
+            float distance = check_ray_collision(cell, &map->foods[j]->rect, i);
+            if (distance >= 0.0f && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestType = RAY_OBJECT_FOOD;
+                closestValue = (float)map->foods[j]->value;
+            }
         }
-        cell->rays[i].distance = distance;
-    }
 
-    // Calculate wall rays
-    // for (int i = 0; i < 7; i++)
-    // {
-    //     float distance = cell->raysWall[i].distanceMax;
-    //     for (int j = 0; j < GAME_START_WALL_COUNT; j++)
-    //     {
-    //         // Food rays are used to detect walls because they are the same
-    //         float newDistance = check_ray_collision(cell, &map->walls[j]->rect, i);
-    //         if (newDistance < distance)
-    //             distance = newDistance;
-    //         if (newDistance < 0.0f)
-    //             distance = 0.0f;
-    //     }
-    //     cell->raysWall[i].distance = distance;
-    // }
-
-    // Calculate other cells rays
-    for (int i = 0; i < map->cellCount; i++)
-    {
-        if (map->cells[i] == NULL || map->cells[i] == cell || !map->cells[i]->isAlive)
-            continue;
-
-        for (int j = 0; j < 7; j++)
+        // Check other cells
+        for (int j = 0; j < map->cellCount; j++)
         {
-            float distance = cell->raysWall[i].distanceMax;
-            float newDistance = check_ray_collision(cell, &map->cells[i]->hitbox, j);
-            if (newDistance < distance)
-                distance = newDistance;
-            if (newDistance < 0.0f)
-                distance = 0.0f;
-            cell->raysWall[j].distance = distance;
+            if (map->cells[j] == NULL || map->cells[j] == cell || !map->cells[j]->isAlive)
+                continue;
+
+            float distance = check_ray_collision(cell, &map->cells[j]->hitbox, i);
+            if (distance >= 0.0f && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestType = RAY_OBJECT_CELL;
+                closestValue = (float)map->cells[j]->health;
+            }
         }
+
+        // Update ray information
+        cell->rays[i].distance = closestDistance;
+        cell->rays[i].hit.type = closestType;
+        cell->rays[i].hit.distance = closestDistance;
+        cell->rays[i].hit.value = closestValue;
     }
 }
 

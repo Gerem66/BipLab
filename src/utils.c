@@ -32,19 +32,19 @@ void Utils_randInit(void)
     srand(time(NULL));
 }
 
-int Utils_rand(int min, int max)
-{
-    return (rand() % (max + 1)) + min;
-}
-
 float Utils_map(float value, float min1, float max1, float min2, float max2)
 {
 	return (value - min1) / (max1 - min1) * (max2 - min2) + min2;
 }
 
-float Utils_randomFloat(float min, float max)
+int irand(int min, int max)
 {
-	return ((float)rand() / (float)RAND_MAX) * (max - min) + min;
+    return (rand() % (max + 1)) + min;
+}
+
+double drand(double min, double max)
+{
+    return min + (double)rand() / ((double)RAND_MAX / (max - min));
 }
 
 // Draw a filled circle on the renderer

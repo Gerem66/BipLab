@@ -200,17 +200,31 @@ void render_rays(Cell *cell, SDL_Renderer *renderer)
                         cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
                         cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
 
-        // Render food ray intersection
-        SDL_RenderFillCircle(renderer,
-                            cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                            cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                            2);
+        // Rendu de l'intersection avec couleur selon le type d'objet détecté
+        if (cell->rays[i].hit.type != RAY_OBJECT_NONE)
+        {
+            // Couleur selon le type d'objet
+            switch (cell->rays[i].hit.type)
+            {
+                case RAY_OBJECT_FOOD:
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Vert pour nourriture
+                    break;
+                case RAY_OBJECT_CELL:
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour cellules
+                    break;
+                case RAY_OBJECT_WALL:
+                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Gris pour murs
+                    break;
+                default:
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Blanc par défaut
+                    break;
+            }
 
-        // Render wall ray intersection
-        SDL_RenderFillCircle(renderer,
-                            cell->position.x + cell->raysWall[i].distance * cos(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
-                            cell->position.y + cell->raysWall[i].distance * sin(cell->raysWall[i].angle + cell->angle * PI / 180.0f),
-                            2);
+            SDL_RenderFillCircle(renderer,
+                                cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                                cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
+                                3); // Légèrement plus gros pour mieux voir
+        }
     }
 }
 

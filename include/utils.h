@@ -17,6 +17,7 @@
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define CLAMP(X, Y, Z) (MAX(MIN(X, Z), Y))
+#define CLAMP01(X) CLAMP(X, 0.0, 1.0)
 
 #define COLOR_BREAKUP(COLOR)    COLOR.r, COLOR.g, COLOR.b, COLOR.a
 
@@ -42,9 +43,9 @@ extern const SDL_Color COLOR_VIOLET;
 void Utils_setBackgroundColor(SDL_Renderer *renderer, SDL_Color color);
 
 void Utils_randInit(void);
-int Utils_rand(int min, int max);
 float Utils_map(float value, float min1, float max1, float min2, float max2);
-float Utils_randomFloat(float min, float max);
+int irand(int min, int max);
+double drand(double min, double max);
 
 void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius);
 void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle);

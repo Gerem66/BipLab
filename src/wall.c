@@ -21,8 +21,8 @@ Wall *Wall_init(float x, float y, float width, float height)
 
 void Wall_reset(Wall *wall, Map *map)
 {
-    wall->rect.x = Utils_rand(0, map->width - wall->rect.w);
-    wall->rect.y = Utils_rand(0, map->height - wall->rect.h);
+    wall->rect.x = irand(0, map->width - wall->rect.w);
+    wall->rect.y = irand(0, map->height - wall->rect.h);
 }
 
 void Wall_render(Wall *wall, SDL_Renderer *renderer)

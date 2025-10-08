@@ -12,14 +12,14 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->isAI = isAI;
     cell->positionInit.x = x;
     cell->positionInit.y = y;
-    cell->healthInit = 30;
-    cell->healthMax = 100;
+    cell->healthInit = CELL_START_HEALTH;
+    cell->healthMax = CELL_MAX_HEALTH;
     cell->framePerHealth = 20;
     cell->birthCostMax = 40;
 
     cell->speedMax = 3.0f;
     cell->velocity = 0.4f;
-    cell->angleVelocity = 4.0f;
+    cell->angleVelocity = 2.0f;
 
     cell->radius = 10;
     cell->hitbox.x = x - cell->radius;
@@ -37,9 +37,9 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
         cell->rays[i].angle = -demiAngle + i * demiAngle / 3;
         cell->rays[i].distance = 0.0f;
         cell->rays[i].distanceMax = 600.0f;
-        cell->raysWall[i].angle = -demiAngle + i * demiAngle / 3;
-        cell->raysWall[i].distance = 0.0f;
-        cell->raysWall[i].distanceMax = 600.0f;
+        cell->rays[i].hit.type = RAY_OBJECT_NONE;
+        cell->rays[i].hit.distance = 0.0f;
+        cell->rays[i].hit.value = 0.0f;
     }
 
     Cell_reset(cell);

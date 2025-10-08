@@ -14,7 +14,7 @@ Food *Food_init(float x, float y)
     food->rect.y = y;
     food->rect.w = 10;
     food->rect.h = 10;
-    food->value = 20;
+    food->value = FOOD_MAX_LIMIT;
     food->color = COLOR_YELLOW;
 
     return food;
@@ -22,9 +22,9 @@ Food *Food_init(float x, float y)
 
 void Food_reset(Food *food, Map *map)
 {
-    food->rect.x = Utils_rand(0, map->width);
-    food->rect.y = Utils_rand(0, map->height);
-    food->value = 20;
+    food->rect.x = irand(0, map->width);
+    food->rect.y = irand(0, map->height);
+    food->value = FOOD_MAX_LIMIT;
 }
 
 void Food_render(Food *food, SDL_Renderer *renderer, bool renderTexts)
