@@ -213,7 +213,7 @@ void Cell_update(Cell *cell, Map *map)
             {
                 if (cell->health < cell->healthMax)
                 {
-                    cell->score++;
+                    cell->score += 5;
                     cell->health++;
                     map->foods[i]->value--;
 
@@ -226,6 +226,9 @@ void Cell_update(Cell *cell, Map *map)
                 }
             }
         }
+
+        // Score over time
+        cell->score++;
     }
 
     // Ray casting for object detection

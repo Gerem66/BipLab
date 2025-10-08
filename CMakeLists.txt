@@ -6,26 +6,34 @@ project(CellsEvolution)
 # Add SDL2 CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
 
+find_package(OpenMP QUIET)
+
 # Add all c source files under the src directory
 file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add all headers files under the include directory
 target_include_directories(${PROJECT_NAME} PRIVATE include)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
 
 # Add compiler errors/warnings flags
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<C_COMPILER_ID:MSVC>:/W4 /WX>)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
 
+if (OpenMP_C_FOUND)
+  target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_OPENMP=1)
+else()
+  message(WARNING "OpenMP non trouvé : compilation sans parallélisme.")
+  target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_OPENMP=0)
+endif()
 
 # Add SDL2 library
 find_package(SDL2 REQUIRED)
-target_link_libraries(${PROJECT_NAME} SDL2::Main)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::Main)
 
 # Add SDL2_image library
 find_package(SDL2_image REQUIRED)
-target_link_libraries(${PROJECT_NAME} SDL2::Image)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::Image)
 
 # Add SDL2_ttf library
 #find_package(SDL2_ttf REQUIRED)
@@ -41,10 +49,18 @@ target_link_libraries(${PROJECT_NAME} SDL2::Image)
 
 # Add SDL2_gfx library
 find_package(SDL2_gfx REQUIRED)
-target_link_libraries(${PROJECT_NAME} SDL2::GFX)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::GFX)
+
+# Include SDL2 headers
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS} ${SDL2_GFX_INCLUDE_DIRS})
 
 # Link the math library
-target_link_libraries(${PROJECT_NAME} m)
+target_link_libraries(${PROJECT_NAME} PRIVATE m)
+
+# Add pthread for multithreading
+find_package(Threads REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
 # Set compiler flags for debug builds (-g for debug symbols)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")

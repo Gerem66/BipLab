@@ -24,21 +24,21 @@ typedef struct Map Map;
 
 // Starting number
 #define GAME_START_CELL_COUNT 50
-#define GAME_START_FOOD_COUNT 20
+#define GAME_START_FOOD_COUNT 10
 #define GAME_START_WALL_COUNT 0
 
 // Game settings
 #define CELL_MAX_HEALTH 200
 #define CELL_START_HEALTH 100
 #define CELL_BIRTH_HEALTH_SACRIFICE 100  // Health points sacrificed for reproduction
-#define CELL_BIRTH_SCORE_BONUS 50       // Score bonus when reproducing
+#define CELL_BIRTH_SCORE_BONUS 2000      // Score bonus when reproducing
 #define CELL_BIRTH_MIN_HEALTH 150        // Minimum health required for reproduction
-#define CELL_BIRTH_FAILED_PENALTY 5     // Health penalty for failed reproduction attempt
+#define CELL_BIRTH_FAILED_PENALTY 5      // Health penalty for failed reproduction attempt
 #define FOOD_MAX_LIMIT 20
 
 // Neural network settings
 #define NEURAL_NETWORK_INIT_TOPOLOGY_SIZE 8
-#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 60, 60, 40, 40, 20, 10, 3 }
+#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 30, 20, 10, 10, 10, 5, 3 }
 #define NEURAL_NETWORK_RESET_MUTATION_RATE 0.1f
 #define NEURAL_NETWORK_RESET_MUTATION_PROB 0.2f
 #define NEURAL_NETWORK_CHILD_MUTATION_RATE 0.05f

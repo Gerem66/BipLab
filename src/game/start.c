@@ -4,45 +4,8 @@
 #include <sys/types.h>
 #include <unistd.h>  // For getcwd()
 
-// Debug function to list files in a directory
-void list_directory_files(const char *path) {
-    DIR *dir;
-    struct dirent *entry;
-
-    printf("Listing files in directory: %s\n", path);
-    
-    dir = opendir(path);
-    if (dir == NULL) {
-        printf("Unable to open directory\n");
-        return;
-    }
-
-    while ((entry = readdir(dir)) != NULL) {
-        // Check if the entry is a file by checking its name
-        if (entry->d_name[0] != '.' && 
-            strstr(entry->d_name, ".png") != NULL) {
-            printf("  - %s\n", entry->d_name);
-        }
-    }
-
-    closedir(dir);
-}
-
 bool Game_start(SDL_Renderer *renderer, int w, int h)
 {
-    // Debug: Print current working directory
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Current working directory: %s\n", cwd);
-    } else {
-        perror("Error getting current working directory");
-    }
-
-    // Debug: List files in bipboup directories
-    printf("Checking bipboup sprite directories:\n");
-    list_directory_files("ressources/bipboup/normal");
-    list_directory_files("ressources/bipboup/shiny");
-
     Map map;
     map.width = w;
     map.height = h;
@@ -105,6 +68,36 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         }
     }
 
+    // Load textures once if sprite rendering is enabled (optimized loading)
+    SDL_Texture *normalSprite = NULL;
+    SDL_Texture *shinySprite = NULL;
+
+    if (CELL_USE_SPRITE) {
+        char normalSpritePath[256];
+        char shinySpritePath[256];
+
+        snprintf(normalSpritePath, sizeof(normalSpritePath), "../ressources/bipboup/normal/skin.png");
+        snprintf(shinySpritePath, sizeof(shinySpritePath), "../ressources/bipboup/shiny/skin.png");
+
+        // Load normal sprite once
+        printf("Loading normal sprite: %s\n", normalSpritePath);
+        normalSprite = IMG_LoadTexture(renderer, normalSpritePath);
+        if (normalSprite == NULL) {
+            printf("Failed to load normal sprite: %s\n", IMG_GetError());
+        } else {
+            printf("Successfully loaded normal sprite\n");
+        }
+
+        // Load shiny sprite once
+        printf("Loading shiny sprite: %s\n", shinySpritePath);
+        shinySprite = IMG_LoadTexture(renderer, shinySpritePath);
+        if (shinySprite == NULL) {
+            printf("Failed to load shiny sprite: %s\n", IMG_GetError());
+        } else {
+            printf("Successfully loaded shiny sprite\n");
+        }
+    }
+
     // Initialize cells
     if (GAME_START_CELL_COUNT <= 0 || GAME_START_CELL_COUNT > CELL_COUNT)
     {
@@ -119,26 +112,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             continue;
         }
 
-        // Load cell sprite if sprite rendering is enabled
-        SDL_Texture *sprite = NULL;
-        if (CELL_USE_SPRITE) {
-            char spritePath[256];
-            snprintf(spritePath, sizeof(spritePath), "../ressources/bipboup/normal/skin.png");
-            
-            // Debug: Print full sprite path
-            printf("Attempting to load sprite: %s\n", spritePath);
-            
-            sprite = IMG_LoadTexture(renderer, spritePath);
-            
-            if (sprite == NULL) {
-                printf("Failed to load sprite: %s\n", IMG_GetError());
-            } else {
-                printf("Successfully loaded sprite\n");
-            }
-        }
-
-        // Create cell with sprite
-        map.cells[i] = Cell_create(sprite, map.width / 2, map.height / 2, !CELL_AS_PLAYER || i > 0);
+        // Create cell with shared sprite texture (no individual loading)
+        map.cells[i] = Cell_create(normalSprite, map.width / 2, map.height / 2, !CELL_AS_PLAYER || i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
@@ -150,14 +125,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         map.cellCount++;
     }
 
-    // Initialize best cell ever
-    SDL_Texture *bestSprite = NULL;
-    if (CELL_USE_SPRITE) {
-        char spritePath[256];
-        snprintf(spritePath, sizeof(spritePath), "../ressources/bipboup/shiny/skin.png");
-        bestSprite = IMG_LoadTexture(renderer, spritePath);
-    }
-    map.bestCellEver = Cell_create(bestSprite, map.width / 2, map.height / 2, false);
+    // Initialize best cell ever with shiny sprite
+    map.bestCellEver = Cell_create(shinySprite, map.width / 2, map.height / 2, false);
 
     // Load a neural network if file exists
     char filename[] = "../ressources/best.nn";
@@ -213,6 +182,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     SDL_initFramerate(&fpsmanager);
     if (GAME_FPS_LIMIT > 0) SDL_setFramerate(&fpsmanager, GAME_FPS_LIMIT);
 
+    // Initialize render timing variables
+    Uint32 lastRenderTime = SDL_GetTicks();
+    Uint32 renderIntervalMs = (GAME_FPS_LIMIT > 0) ? (1000 / GAME_FPS_LIMIT) : 0;
+
     // Event loop
     while (!map.quit)
     {
@@ -224,17 +197,32 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Update
         Game_update(&map);
 
-        // Render
-        Game_render(renderer, &map);
+        // Render only if enough time has passed since last render (for FPS control)
+        Uint32 currentTime = SDL_GetTicks();
+        bool shouldRender = true;
+
+        if (GAME_FPS_LIMIT > 0 && renderIntervalMs > 0) {
+            shouldRender = (currentTime - lastRenderTime) >= renderIntervalMs;
+        }
+
+        if (shouldRender) {
+            Game_render(renderer, &map);
+            lastRenderTime = currentTime;
+        }
 
         // Delay to cap framerate if vertical sync is enabled and FPS limit is set
         if (map.verticalSync && GAME_FPS_LIMIT > 0)
             SDL_framerateDelay(&fpsmanager);
     }
 
-    // Free cell sprites if they were loaded
+    // Free loaded textures
     if (CELL_USE_SPRITE) {
-        free_cell_sprites();
+        if (normalSprite) {
+            SDL_DestroyTexture(normalSprite);
+        }
+        if (shinySprite) {
+            SDL_DestroyTexture(shinySprite);
+        }
     }
 
     int popup_save_result = open_popup_ask(

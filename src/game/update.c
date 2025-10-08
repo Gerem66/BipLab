@@ -1,3 +1,9 @@
+#include <math.h>
+
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
 #include "game.h"
 
 void Game_update(Map *map)
@@ -7,10 +13,15 @@ void Game_update(Map *map)
 
     map->frames++;
 
-    // Update cells
-    for (int i = 0; i < map->cellCount; ++i)
-        if (map->cells[i] != NULL)
+    // Update cells - Parallelized with OpenMP
+#ifdef HAVE_OPENMP
+    #pragma omp parallel for
+#endif
+    for (int i = 0; i < map->cellCount; ++i) {
+        if (map->cells[i] != NULL) {
             Cell_update(map->cells[i], map);
+        }
+    }
 
     // Check generation
     bool allDead = true;
