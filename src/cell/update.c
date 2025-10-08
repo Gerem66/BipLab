@@ -273,10 +273,5 @@ void Cell_update(Cell *cell, Map *map)
 void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
 {
     mutate_NeuralNetwork_Weights(cell->nn, mutationRate, mutationProbability);
-    mutate_NeuralNetwork_Topology(
-        cell->nn,
-        NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX,
-        NEURAL_NETWORK_TOPOLOGY_LAYER_SIZE_MAX,
-        NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY
-    );
+    // mutate_NeuralNetwork_Topology(cell->nn, NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX, NEURAL_NETWORK_TOPOLOGY_LAYER_SIZE_MAX, NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY);
 }

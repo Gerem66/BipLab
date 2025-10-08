@@ -209,10 +209,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize framerate manager
-    const int FPS = 120 / 2;
     FPSmanager fpsmanager;
     SDL_initFramerate(&fpsmanager);
-    SDL_setFramerate(&fpsmanager, FPS);
+    if (GAME_FPS_LIMIT > 0) SDL_setFramerate(&fpsmanager, GAME_FPS_LIMIT);
 
     // Event loop
     while (!map.quit)
@@ -228,8 +227,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Render
         Game_render(renderer, &map);
 
-        // Delay
-        if (map.verticalSync)
+        // Delay to cap framerate if vertical sync is enabled and FPS limit is set
+        if (map.verticalSync && GAME_FPS_LIMIT > 0)
             SDL_framerateDelay(&fpsmanager);
     }
 

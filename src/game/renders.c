@@ -18,6 +18,10 @@ void Game_render(SDL_Renderer *renderer, Map *map)
         // Render walls
         for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
             Wall_render(map->walls[i], map->renderer);
+    } else {
+        // Render only the best cell
+        if (map->cells[map->currentBestCellIndex] != NULL)
+            Cell_render(map->cells[map->currentBestCellIndex], map->renderer, map->renderRays, true);
     }
 
     // Render neural network
@@ -56,22 +60,39 @@ void Render_Text(Map *map, SDL_Color color)
 
     // Game informations
     time_t currentTime = time(NULL) - map->startTime;
+
+    // FPS approximatif
+    static time_t lastTime = 0;
+    static int frameCount = 0;
+    static int currentFPS = 0;
+    frameCount++;
+    if (currentTime != lastTime) {
+        currentFPS = frameCount;
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+
+    // Game info
     sprintf(message, "Time: %dm %ds (Frame %d)", (int)(currentTime / 60), (int)(currentTime % 60), map->frames % 1000);
     stringRGBA(map->renderer, 100, 25, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, map->maxGeneration);
+    sprintf(message, "FPS: ~%d (V-Sync: %s)", currentFPS, map->verticalSync ? "ON" : "OFF");
     stringRGBA(map->renderer, 100, 50, message, color.r, color.g, color.b, color.a);
-
-    sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
-    stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
-
-    sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
-    stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
     // Checkpoint informations
     int gensSinceCheckpoint = map->generation - map->lastCheckpointGeneration;
     sprintf(message, "Checkpoints: %d saved (next in %d gen)", map->checkpointCounter, CHECKPOINT_SAVE_INTERVAL - gensSinceCheckpoint);
-    stringRGBA(map->renderer, 100, 125, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
+
+    // Generation and cells info
+    sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, map->maxGeneration);
+    stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
+    stringRGBA(map->renderer, 500, 50, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
+    stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
 
 #if CELL_AS_PLAYER
     // Player informations
@@ -101,7 +122,7 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "I: Enable/Disable render of cells");
     stringRGBA(map->renderer, 850, 100, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "O: Enable/Disable vertical sync");
+    sprintf(message, "V: Enable/Disable vertical sync");
     stringRGBA(map->renderer, 850, 125, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "P: Pause/Unpause cells evolution");

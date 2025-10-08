@@ -23,15 +23,13 @@ typedef struct Map Map;
 #define WALL_COUNT 6
 
 // Starting number
-#define GAME_START_CELL_COUNT 20
-#define GAME_START_FOOD_COUNT 10
+#define GAME_START_CELL_COUNT 50
+#define GAME_START_FOOD_COUNT 20
 #define GAME_START_WALL_COUNT 0
 
 // Game settings
 #define CELL_MAX_HEALTH 200
 #define CELL_START_HEALTH 100
-#define CELL_BIRTH_COST 40
-#define CELL_BIRTH_SCORE 100
 #define CELL_BIRTH_HEALTH_SACRIFICE 100  // Health points sacrificed for reproduction
 #define CELL_BIRTH_SCORE_BONUS 50       // Score bonus when reproducing
 #define CELL_BIRTH_MIN_HEALTH 150        // Minimum health required for reproduction
@@ -52,6 +50,7 @@ typedef struct Map Map;
 #define NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX 20
 
 // Settings
+#define GAME_FPS_LIMIT      60
 #define CELL_USE_SPRITE     true
 #define CELL_AS_PLAYER      false
 #define CONTROLS_ZOOM_SPEED 0.2

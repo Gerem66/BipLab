@@ -53,7 +53,7 @@ void Game_events(Map *map, SDL_Event *event)
             case SDLK_i:
                 map->renderEnabled = !map->renderEnabled;
                 break;
-            case SDLK_o:
+            case SDLK_v:
                 map->verticalSync = !map->verticalSync;
                 break;
             case SDLK_p:
