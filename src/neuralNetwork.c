@@ -165,10 +165,9 @@ void mutate_NeuralNetwork_Weights(NeuralNetwork *nn, double mutationRate, float 
 
 /**
  * @brief Can mutate the topology of the neural network:
- * - Add a neuron to a random layer
- * - Remove a neuron from a random layer
- * - Add a layer
- * - Remove a layer
+ * - Add a neuron to a random hidden layer (not input/output)
+ * - Remove a neuron from a random hidden layer (not input/output)
+ * Note: Layer addition/removal is disabled as it's complex to implement correctly
  *
  * @param nn
  * @param maxNeurons
@@ -177,176 +176,194 @@ void mutate_NeuralNetwork_Weights(NeuralNetwork *nn, double mutationRate, float 
  */
 void mutate_NeuralNetwork_Topology(NeuralNetwork *nn, int maxNeurons, int maxLayers, float mutationProbability)
 {
+    (void)maxLayers; // Suppress unused parameter warning
+
     if (rand() / (double)RAND_MAX >= mutationProbability) {
         return;
     }
 
-    int mutationType = rand() % 6;
+    // Only allow neuron addition/removal in hidden layers (not input/output)
+    if (nn->topologySize < 3) {
+        return; // Need at least input + hidden + output
+    }
 
-    if (mutationType == 0 || mutationType == 1)
+    int mutationType = rand() % 2; // 0 = add neuron, 1 = remove neuron
+
+    if (mutationType == 0)
     {
-        // Add a neuron to a random hidden layer
-        int layerIndex = rand() % (nn->topologySize - 1); // Exclude the output layer
-        int neuronCount = nn->layers[layerIndex]->neuronCount;
-        int nextLayerNeuronCount = nn->layers[layerIndex]->nextLayerNeuronCount;
+        // Add a neuron to a random HIDDEN layer (exclude input and output)
+        int hiddenLayerCount = nn->topologySize - 2;
+        if (hiddenLayerCount <= 0) return;
 
-        if (neuronCount < maxNeurons)
-        {
-            NeuralLayer *newLayer = createNeuralLayer(neuronCount + 1, nextLayerNeuronCount);
-            if (newLayer == NULL)
-            {
+        int hiddenLayerIndex = rand() % hiddenLayerCount; // 0 to hiddenLayerCount-1
+        int layerIndex = hiddenLayerIndex + 1; // +1 to skip input layer
+
+        NeuralLayer *currentLayer = nn->layers[layerIndex];
+        int currentNeurons = currentLayer->neuronCount;
+        int nextLayerNeurons = currentLayer->nextLayerNeuronCount;
+
+        if (currentNeurons >= maxNeurons) {
+            return; // Already at max capacity
+        }
+
+        // Create new layer with one more neuron
+        NeuralLayer *newLayer = createNeuralLayer(currentNeurons + 1, nextLayerNeurons);
+        if (newLayer == NULL) {
+            return;
+        }
+
+        // Copy existing weights from current layer to new layer
+        // Format: weights[from_neuron * next_layer_size + to_neuron]
+        for (int from = 0; from < currentNeurons; from++) {
+            for (int to = 0; to < nextLayerNeurons; to++) {
+                int oldIndex = from * nextLayerNeurons + to;
+                int newIndex = from * nextLayerNeurons + to;
+                newLayer->weights[newIndex] = currentLayer->weights[oldIndex];
+            }
+        }
+
+        // Initialize weights for the new neuron (last neuron)
+        for (int to = 0; to < nextLayerNeurons; to++) {
+            int newIndex = currentNeurons * nextLayerNeurons + to;
+            newLayer->weights[newIndex] = drand(-0.5, 0.5);
+        }
+
+        // Copy existing biases
+        for (int i = 0; i < nextLayerNeurons; i++) {
+            newLayer->biases[i] = currentLayer->biases[i];
+        }
+
+        // Update topology
+        nn->topology[layerIndex] = currentNeurons + 1;
+
+        // Update previous layer if it exists to connect to the new neuron
+        if (layerIndex > 0) {
+            NeuralLayer *prevLayer = nn->layers[layerIndex - 1];
+            int prevNeurons = prevLayer->neuronCount;
+            int prevNextLayerNeurons = prevLayer->nextLayerNeuronCount;
+
+            // Create new previous layer with updated connections
+            NeuralLayer *newPrevLayer = createNeuralLayer(prevNeurons, currentNeurons + 1);
+            if (newPrevLayer == NULL) {
+                freeNeuralLayer(newLayer);
                 return;
             }
 
-            // Copy the weights from the old layer
-            for (int i = 0; i < neuronCount; i++)
-            {
-                newLayer->weights[i] = rand() / (double)RAND_MAX;
+            // Copy existing weights and add new connections to the new neuron
+            for (int from = 0; from < prevNeurons; from++) {
+                for (int to = 0; to < currentNeurons; to++) {
+                    int oldIndex = from * prevNextLayerNeurons + to;
+                    int newIndex = from * (currentNeurons + 1) + to;
+                    newPrevLayer->weights[newIndex] = prevLayer->weights[oldIndex];
+                }
+                // Add connection to new neuron
+                int newNeuronIndex = from * (currentNeurons + 1) + currentNeurons;
+                newPrevLayer->weights[newNeuronIndex] = drand(-0.5, 0.5);
             }
 
-            freeNeuralLayer(nn->layers[layerIndex]);
-            nn->layers[layerIndex] = newLayer;
-        }
-    }
-    else if (mutationType == 2 || mutationType == 3)
-    {
-        // Remove a neuron from a random hidden layer
-        int layerIndex = rand() % (nn->topologySize - 1); // Exclude the output layer
-        int neuronCount = nn->layers[layerIndex]->neuronCount;
-        int nextLayerNeuronCount = nn->layers[layerIndex]->nextLayerNeuronCount;
+            // Copy biases and add bias for new neuron
+            for (int i = 0; i < currentNeurons; i++) {
+                newPrevLayer->biases[i] = prevLayer->biases[i];
+            }
+            newPrevLayer->biases[currentNeurons] = drand(-0.5, 0.5);
 
-        if (neuronCount > 1)
-        {
-            NeuralLayer *newLayer = createNeuralLayer(neuronCount - 1, nextLayerNeuronCount);
-            if (newLayer == NULL)
-            {
+            // Replace previous layer
+            freeNeuralLayer(nn->layers[layerIndex - 1]);
+            nn->layers[layerIndex - 1] = newPrevLayer;
+        }
+
+        // Replace current layer
+        freeNeuralLayer(nn->layers[layerIndex]);
+        nn->layers[layerIndex] = newLayer;
+    }
+    else if (mutationType == 1)
+    {
+        // Remove a neuron from a random HIDDEN layer
+        int hiddenLayerCount = nn->topologySize - 2;
+        if (hiddenLayerCount <= 0) return;
+
+        int hiddenLayerIndex = rand() % hiddenLayerCount;
+        int layerIndex = hiddenLayerIndex + 1; // +1 to skip input layer
+
+        NeuralLayer *currentLayer = nn->layers[layerIndex];
+        int currentNeurons = currentLayer->neuronCount;
+        int nextLayerNeurons = currentLayer->nextLayerNeuronCount;
+
+        if (currentNeurons <= 1) {
+            return; // Can't remove the last neuron
+        }
+
+        int neuronToRemove = rand() % currentNeurons;
+
+        // Create new layer with one less neuron
+        NeuralLayer *newLayer = createNeuralLayer(currentNeurons - 1, nextLayerNeurons);
+        if (newLayer == NULL) {
+            return;
+        }
+
+        // Copy weights, skipping the removed neuron
+        int newFrom = 0;
+        for (int from = 0; from < currentNeurons; from++) {
+            if (from == neuronToRemove) continue;
+
+            for (int to = 0; to < nextLayerNeurons; to++) {
+                int oldIndex = from * nextLayerNeurons + to;
+                int newIndex = newFrom * nextLayerNeurons + to;
+                newLayer->weights[newIndex] = currentLayer->weights[oldIndex];
+            }
+            newFrom++;
+        }
+
+        // Copy biases
+        for (int i = 0; i < nextLayerNeurons; i++) {
+            newLayer->biases[i] = currentLayer->biases[i];
+        }
+
+        // Update topology
+        nn->topology[layerIndex] = currentNeurons - 1;
+
+        // Update previous layer if it exists
+        if (layerIndex > 0) {
+            NeuralLayer *prevLayer = nn->layers[layerIndex - 1];
+            int prevNeurons = prevLayer->neuronCount;
+            int prevNextLayerNeurons = prevLayer->nextLayerNeuronCount;
+
+            // Create new previous layer with updated connections
+            NeuralLayer *newPrevLayer = createNeuralLayer(prevNeurons, currentNeurons - 1);
+            if (newPrevLayer == NULL) {
+                freeNeuralLayer(newLayer);
                 return;
             }
 
-            // Copy the weights from the old layer
-            for (int i = 0; i < neuronCount - 1; i++)
-            {
-                newLayer->weights[i] = nn->layers[layerIndex]->weights[i];
+            // Copy weights, skipping connections to the removed neuron
+            for (int from = 0; from < prevNeurons; from++) {
+                int newTo = 0;
+                for (int to = 0; to < prevNextLayerNeurons; to++) {
+                    if (to == neuronToRemove) continue;
+
+                    int oldIndex = from * prevNextLayerNeurons + to;
+                    int newIndex = from * (currentNeurons - 1) + newTo;
+                    newPrevLayer->weights[newIndex] = prevLayer->weights[oldIndex];
+                    newTo++;
+                }
             }
 
-            freeNeuralLayer(nn->layers[layerIndex]);
-            nn->layers[layerIndex] = newLayer;
-        }
-    }
-    else if (mutationType == 4 && nn->topologySize < maxLayers)
-    {
-        return;
+            // Copy biases, skipping the removed neuron's bias
+            int newBiasIndex = 0;
+            for (int i = 0; i < prevNextLayerNeurons; i++) {
+                if (i == neuronToRemove) continue;
+                newPrevLayer->biases[newBiasIndex] = prevLayer->biases[i];
+                newBiasIndex++;
+            }
 
-        // Choose a random position to insert the new layer (excluding input and output)
-        int insertPosition = 1 + rand() % (nn->topologySize - 2);
-
-        // Determine the number of neurons in the new layer
-        int newLayerSize = nn->topology[insertPosition];
-
-        // Create a new topology array
-        int *newTopology = (int *)malloc((nn->topologySize + 1) * sizeof(int));
-        if (newTopology == NULL)
-        {
-            return;
+            // Replace previous layer
+            freeNeuralLayer(nn->layers[layerIndex - 1]);
+            nn->layers[layerIndex - 1] = newPrevLayer;
         }
 
-        // Copy the topology, inserting the new layer
-        for (int i = 0; i < insertPosition; i++)
-        {
-            newTopology[i] = nn->topology[i];
-        }
-        newTopology[insertPosition] = newLayerSize;
-        for (int i = insertPosition; i < nn->topologySize; i++)
-        {
-            newTopology[i + 1] = nn->topology[i];
-        }
-
-        // Create new layers array
-        NeuralLayer **newLayers = (NeuralLayer **)malloc(nn->topologySize * sizeof(NeuralLayer *));
-        if (newLayers == NULL)
-        {
-            free(newTopology);
-            return;
-        }
-
-        // Copy existing layers and create the new layer
-        for (int i = 0; i < insertPosition; i++)
-        {
-            newLayers[i] = nn->layers[i];
-        }
-        newLayers[insertPosition] = createNeuralLayer(newLayerSize, nn->topology[insertPosition]);
-        if (newLayers[insertPosition] == NULL)
-        {
-            free(newTopology);
-            free(newLayers);
-            return;
-        }
-        for (int i = insertPosition; i < nn->topologySize - 1; i++)
-        {
-            newLayers[i + 1] = nn->layers[i];
-        }
-
-        // Update the neural network
-        free(nn->topology);
-        free(nn->layers);
-        nn->topology = newTopology;
-        nn->layers = newLayers;
-        nn->topologySize++;
-
-        // Initialize weights for the new layer
-        setRandomWeights(nn, -1.0, 1.0);
-    }
-    else if (mutationType == 5 && nn->topologySize > 3)
-    {
-        return;
-
-        // Choose a random hidden layer to remove
-        int removePosition = 1 + rand() % (nn->topologySize - 2);
-
-        // Create a new topology array
-        int *newTopology = (int *)malloc((nn->topologySize - 1) * sizeof(int));
-        if (newTopology == NULL)
-        {
-            return;
-        }
-
-        // Copy the topology, skipping the removed layer
-        for (int i = 0; i < removePosition; i++)
-        {
-            newTopology[i] = nn->topology[i];
-        }
-        for (int i = removePosition + 1; i < nn->topologySize; i++)
-        {
-            newTopology[i - 1] = nn->topology[i];
-        }
-
-        // Create new layers array
-        NeuralLayer **newLayers = (NeuralLayer **)malloc((nn->topologySize - 2) * sizeof(NeuralLayer *));
-        if (newLayers == NULL)
-        {
-            free(newTopology);
-            return;
-        }
-
-        // Copy layers, skipping the removed one
-        for (int i = 0; i < removePosition; i++)
-        {
-            newLayers[i] = nn->layers[i];
-        }
-        for (int i = removePosition + 1; i < nn->topologySize - 1; i++)
-        {
-            newLayers[i - 1] = nn->layers[i];
-        }
-
-        // Free the removed layer
-        freeNeuralLayer(nn->layers[removePosition]);
-
-        // Update the neural network
-        free(nn->topology);
-        free(nn->layers);
-        nn->topology = newTopology;
-        nn->layers = newLayers;
-        nn->topologySize--;
+        // Replace current layer
+        freeNeuralLayer(nn->layers[layerIndex]);
+        nn->layers[layerIndex] = newLayer;
     }
 }
 
