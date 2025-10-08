@@ -14,6 +14,7 @@ typedef struct Map Map;
 #include "food.h"
 #include "wall.h"
 #include "popup.h"
+#include "checkpoint.h"
 #include "neuralNetwork.h"
 
 // Maximum number in memory
@@ -72,6 +73,10 @@ struct Map
     bool quit;
     int currentBestCellIndex;
     SDL_Renderer *renderer;
+
+    // Checkpoint tracking
+    int lastCheckpointGeneration;
+    int checkpointCounter;
 };
 
 

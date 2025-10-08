@@ -73,4 +73,11 @@ void Game_reset(Map *map, bool fullReset)
 
     map->frames = 1;
     map->generation++;
+
+    // Check if you have to make a checkpoint at each generation
+    if (map->generation - map->lastCheckpointGeneration >= CHECKPOINT_SAVE_INTERVAL)
+    {
+        Checkpoint_save(map);
+        map->lastCheckpointGeneration = map->generation;
+    }
 }

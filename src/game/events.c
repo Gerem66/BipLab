@@ -59,6 +59,10 @@ void Game_events(Map *map, SDL_Event *event)
             case SDLK_p:
                 map->isRunning = !map->isRunning;
                 break;
+            case SDLK_c:
+                Checkpoint_save(map);
+                map->lastCheckpointGeneration = map->generation;
+                break;
             default:
                 break;
         }

@@ -65,6 +65,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.currentBestCellIndex = 1;
     map.renderer = renderer;
 
+    // Initialize checkpoint variables
+    map.lastCheckpointGeneration = 0;
+    map.checkpointCounter = 0;
+
     // Initialize walls
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
     {

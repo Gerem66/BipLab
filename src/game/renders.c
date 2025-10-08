@@ -68,6 +68,11 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
     stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
+    // Checkpoint informations
+    int gensSinceCheckpoint = map->generation - map->lastCheckpointGeneration;
+    sprintf(message, "Checkpoints: %d saved (next in %d gen)", map->checkpointCounter, CHECKPOINT_SAVE_INTERVAL - gensSinceCheckpoint);
+    stringRGBA(map->renderer, 100, 125, message, color.r, color.g, color.b, color.a);
+
 #if CELL_AS_PLAYER
     // Player informations
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
@@ -108,9 +113,12 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Return: Save best neural network");
     stringRGBA(map->renderer, 850, 200, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
+    sprintf(message, "C: Save checkpoint manually");
     stringRGBA(map->renderer, 850, 225, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Esc: Quit");
+    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
     stringRGBA(map->renderer, 850, 250, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Esc: Quit");
+    stringRGBA(map->renderer, 850, 275, message, color.r, color.g, color.b, color.a);
 }
