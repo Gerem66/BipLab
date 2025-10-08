@@ -38,6 +38,14 @@ bool Game_save(Map *map, char *filename)
         fprintf(file, "\n");
     }
 
+    // Save the biases
+    for (int i = 0; i < nn->topologySize - 1; i++) {
+        for (int j = 0; j < nn->layers[i]->nextLayerNeuronCount; j++) {
+            fprintf(file, "%.10lf ", nn->layers[i]->biases[j]);
+        }
+        fprintf(file, "\n");
+    }
+
     fclose(file);
     return true;
 }
@@ -70,6 +78,13 @@ NeuralNetwork* Game_load(Map *map, char *filename)
     for (int i = 0; i < topologySize - 1; i++) {
         for (int j = 0; j < nn->layers[i]->neuronCount * nn->layers[i]->nextLayerNeuronCount; j++) {
             fscanf(file, "%lf", &nn->layers[i]->weights[j]);
+        }
+    }
+
+    // Load the biases
+    for (int i = 0; i < topologySize - 1; i++) {
+        for (int j = 0; j < nn->layers[i]->nextLayerNeuronCount; j++) {
+            fscanf(file, "%lf", &nn->layers[i]->biases[j]);
         }
     }
 

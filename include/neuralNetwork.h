@@ -15,6 +15,7 @@ struct NeuralLayer {
     int neuronCount;
     int nextLayerNeuronCount;
     double *weights;
+    double *biases;
     double *outputs;
 };
 

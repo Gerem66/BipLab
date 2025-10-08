@@ -29,7 +29,7 @@ typedef struct Map Map;
 
 // Game settings
 #define CELL_MAX_HEALTH 100
-#define CELL_START_HEALTH 50
+#define CELL_START_HEALTH 100
 #define FOOD_MAX_LIMIT 20
 
 // Neural network settings
