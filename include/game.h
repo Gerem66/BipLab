@@ -49,6 +49,10 @@ typedef struct Map Map;
 #define NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MIN 4
 #define NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX 20
 
+// Evolution settings
+#define SCORE_HISTORY_MAX_SIZE 10000
+#define EVOLUTION_PARENT_SELECTION_RATIO 0.1f
+
 // Settings
 #define GAME_FPS_LIMIT      60
 #define CELL_USE_SPRITE     true

@@ -1,66 +1,108 @@
 #include "game.h"
+#include <limits.h>
 
 void Game_reset(Map *map, bool fullReset)
 {
-    // Get best cell
-    Cell *bestCell;
+    Cell *bestParents[CELL_COUNT];
+    int parentCount = 0;
 
     if (fullReset)
     {
-        bestCell = map->bestCellEver;
+        // Use the best cell ever for full reset
+        bestParents[0] = map->bestCellEver;
+        parentCount = 1;
     }
     else
     {
-        bestCell = map->cells[0];
-        for (int i = 0; i < map->cellCount; ++i)
-            if (map->cells[i] != NULL && map->cells[i]->score > bestCell->score)
-                bestCell = map->cells[i];
+        // Create array of all cells with their scores
+        typedef struct {
+            Cell *cell;
+            int score;
+        } CellScore;
 
-        if (bestCell->score > map->maxScore)
-            map->maxScore = bestCell->score;
+        CellScore cellScores[CELL_COUNT];
+        int validCellCount = 0;
 
-        // Sauvegarder le score dans l'historique pour le graphique
-        if (map->scoreHistoryCount < SCORE_HISTORY_MAX_SIZE) {
-            map->scoreHistory[map->scoreHistoryCount] = bestCell->score;
+        // Collect all valid cells
+        for (int i = 0; i < map->cellCount; ++i) {
+            if (map->cells[i] != NULL) {
+                cellScores[validCellCount].cell = map->cells[i];
+                cellScores[validCellCount].score = map->cells[i]->score;
+                validCellCount++;
+            }
+        }
+
+        // Sort cells by score (descending)
+        for (int i = 0; i < validCellCount - 1; i++) {
+            for (int j = 0; j < validCellCount - i - 1; j++) {
+                if (cellScores[j].score < cellScores[j + 1].score) {
+                    CellScore temp = cellScores[j];
+                    cellScores[j] = cellScores[j + 1];
+                    cellScores[j + 1] = temp;
+                }
+            }
+        }
+
+        // Select top X% as parents (minimum 1, maximum 10)
+        parentCount = (int)(validCellCount * EVOLUTION_PARENT_SELECTION_RATIO);
+        if (parentCount < 1) parentCount = 1;
+
+        for (int i = 0; i < parentCount; i++) {
+            bestParents[i] = cellScores[i].cell;
+        }
+
+        // Update max score with the best cell
+        if (validCellCount > 0 && cellScores[0].score > map->maxScore) {
+            map->maxScore = cellScores[0].score;
+        }
+
+        // Save score history for graph (best score of generation)
+        if (validCellCount > 0 && map->scoreHistoryCount < SCORE_HISTORY_MAX_SIZE) {
+            map->scoreHistory[map->scoreHistoryCount] = cellScores[0].score;
             map->scoreHistoryCount++;
         }
     }
 
-    // Reset & mutate firsts cells state
+    // Reset & mutate cells using selected parents
     int revived = 0;
     while (revived < GAME_START_CELL_COUNT)
     {
-        int bestIndex = -1;
-        int bestScore = -1;
+        int targetIndex = -1;
+        int worstScore = INT_MAX;
+
+        // Find worst performing cell to replace
         for (int i = 0; i < map->cellCount; ++i)
         {
             if (map->cells[i] == NULL)
                 continue;
 
-            if (!map->cells[i]->isAlive && map->cells[i]->score > bestScore)
+            if (!map->cells[i]->isAlive && map->cells[i]->score < worstScore)
             {
-                bestIndex = i;
-                bestScore = map->cells[i]->score;
+                targetIndex = i;
+                worstScore = map->cells[i]->score;
             }
         }
-        if (bestIndex == -1)
+        if (targetIndex == -1)
         {
             fprintf(stderr, "Error while reviving cells !\n");
             return;
         }
 
-        NeuralNetwork *newNN = NeuralNetwork_Copy(bestCell->nn);
+        // Select a random parent from the top 20%
+        Cell *selectedParent = bestParents[revived % parentCount];
+
+        NeuralNetwork *newNN = NeuralNetwork_Copy(selectedParent->nn);
         if (newNN == NULL)
         {
             fprintf(stderr, "Failed to copy NeuralNetwork !\n");
             return;
         }
 
-        Cell_reset(map->cells[bestIndex]);
-        freeNeuralNetwork(map->cells[bestIndex]->nn);
-        map->cells[bestIndex]->nn = newNN;
+        Cell_reset(map->cells[targetIndex]);
+        freeNeuralNetwork(map->cells[targetIndex]->nn);
+        map->cells[targetIndex]->nn = newNN;
         Cell_mutate(
-            map->cells[bestIndex],
+            map->cells[targetIndex],
             NEURAL_NETWORK_RESET_MUTATION_RATE,
             NEURAL_NETWORK_RESET_MUTATION_PROB
         );
