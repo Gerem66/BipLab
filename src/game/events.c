@@ -63,6 +63,9 @@ void Game_events(Map *map, SDL_Event *event)
                 Checkpoint_save(map);
                 map->lastCheckpointGeneration = map->generation;
                 break;
+            case SDLK_g:
+                map->renderScoreGraph = !map->renderScoreGraph;
+                break;
             default:
                 break;
         }

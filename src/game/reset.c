@@ -18,6 +18,12 @@ void Game_reset(Map *map, bool fullReset)
 
         if (bestCell->score > map->maxScore)
             map->maxScore = bestCell->score;
+
+        // Sauvegarder le score dans l'historique pour le graphique
+        if (map->scoreHistoryCount < SCORE_HISTORY_MAX_SIZE) {
+            map->scoreHistory[map->scoreHistoryCount] = bestCell->score;
+            map->scoreHistoryCount++;
+        }
     }
 
     // Reset & mutate firsts cells state

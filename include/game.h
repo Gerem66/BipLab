@@ -29,7 +29,7 @@ typedef struct Map Map;
 
 // Game settings
 #define CELL_MAX_HEALTH 200
-#define CELL_START_HEALTH 100
+#define CELL_START_HEALTH 80
 #define CELL_BIRTH_HEALTH_SACRIFICE 100  // Health points sacrificed for reproduction
 #define CELL_BIRTH_SCORE_BONUS 2000      // Score bonus when reproducing
 #define CELL_BIRTH_MIN_HEALTH 150        // Minimum health required for reproduction
@@ -37,8 +37,8 @@ typedef struct Map Map;
 #define FOOD_MAX_LIMIT 20
 
 // Neural network settings
-#define NEURAL_NETWORK_INIT_TOPOLOGY_SIZE 6
-#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 64, 64, 64, 32, 3 }
+#define NEURAL_NETWORK_INIT_TOPOLOGY_SIZE 8
+#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 64, 64, 64, 32, 32, 16, 3 }
 #define NEURAL_NETWORK_RESET_MUTATION_RATE 0.1f
 #define NEURAL_NETWORK_RESET_MUTATION_PROB 0.2f
 #define NEURAL_NETWORK_CHILD_MUTATION_RATE 0.05f
@@ -80,6 +80,7 @@ struct Map
     bool renderText;
     bool renderRays;
     bool renderNeuralNetwork;
+    bool renderScoreGraph;
     bool renderEnabled;
 
     bool quit;
@@ -95,6 +96,11 @@ struct Map
     int currentFPS;
     int currentUPS;
     float currentGPS;
+
+    // Score graph tracking
+    #define SCORE_HISTORY_MAX_SIZE 10000  // Maximum de générations à traquer
+    int *scoreHistory;  // Historique des meilleurs scores par génération (allocation dynamique)
+    int scoreHistoryCount;  // Nombre de générations enregistrées
 };
 
 
@@ -104,6 +110,7 @@ void Game_update(Map *map);
 void Game_reset(Map *map, bool fullReset);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
+void Render_ScoreGraph(Map *map, SDL_Renderer *renderer, int x, int y, int width, int height);
 
 bool Game_exists(char *filename);
 bool Game_save(Map *map, char *filename);

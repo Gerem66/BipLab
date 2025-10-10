@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <unistd.h>  // For getcwd()
+#include <stdlib.h>  // For malloc/free
 
 bool Game_start(SDL_Renderer *renderer, int w, int h)
 {
@@ -24,6 +25,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.renderText = true;
     map.renderRays = false;
     map.renderNeuralNetwork = false;
+    map.renderScoreGraph = false;
     map.renderEnabled = true;
     map.cellCount = 0;
     map.quit = false;
@@ -39,6 +41,14 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.currentFPS = 0;
     map.currentUPS = 0;
     map.currentGPS = 0.0f;
+
+    // Initialize score graph
+    map.scoreHistory = malloc(SCORE_HISTORY_MAX_SIZE * sizeof(int));
+    if (map.scoreHistory == NULL) {
+        fprintf(stderr, "Failed to allocate memory for score history!\n");
+        return false;
+    }
+    map.scoreHistoryCount = 0;
 
     // Initialize walls
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
@@ -268,6 +278,11 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                 "Error while saving !",
                 "An error occured while saving the neural network !"
             );
+    }
+
+    // Free score history memory
+    if (map.scoreHistory != NULL) {
+        free(map.scoreHistory);
     }
 
     return true;
