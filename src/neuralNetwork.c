@@ -386,130 +386,68 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
         return;
     }
 
+    NeuralNetwork *nn = cell->nn;
+
     // Show index of cell and legend
     char indexText[50];
     sprintf(indexText, "Best cell: %d, with score: %d", index, cell->score);
     SDL_Color color = {255, 255, 255, 255};
     stringRGBA(renderer, x, y - 30, indexText, color.r, color.g, color.b, color.a);
-
-    // Add legend for bias representation
     stringRGBA(renderer, x, y - 15, "Bias: Green tint(+) Red tint(-)", 200, 200, 200, 255);
 
-    NeuralNetwork *nn = cell->nn;
-
-    // Connection opacity control - Adjust this value to control density-based opacity reduction
-    // 0.0f = no reduction (all connections fully visible)
-    // 1.0f = maximum reduction (dense networks become very faint)
-    float opacityReductionFactor = 0.8f;
+    // Network topology and layout calculations
     int layerCount = nn->topologySize - 1;
+    int layerSpacing = (w - 20) / (layerCount + 1);
 
-    // Calculate spacing between layers and neurons
-    int layerSpacing = w / (layerCount + 2);
+    // Find maximum neurons for centering
     int maxNeurons = 0;
-
-    // Check input layer size (first layer's neuronCount)
-    if (nn->layers[0]->neuronCount > maxNeurons)
+    for (int i = 0; i < nn->topologySize; i++)
     {
-        maxNeurons = nn->layers[0]->neuronCount;
-    }
-
-    // Check all hidden layers
-    for (int i = 0; i < layerCount; i++)
-    {
-        if (nn->layers[i]->nextLayerNeuronCount > maxNeurons)
-        {
-            maxNeurons = nn->layers[i]->nextLayerNeuronCount;
-        }
+        if (nn->topology[i] > maxNeurons)
+            maxNeurons = nn->topology[i];
     }
 
     int neuronSpacing = h / (maxNeurons + 1);
+    float opacityReductionFactor = 0.8f;
 
-    // PHASE 1: Draw all connections first (background layer)
+    // Unified opacity calculation
+    float baseOpacity = 50.0f * (1.0f - opacityReductionFactor);
+    float intensityRange = 100.0f * (1.0f - opacityReductionFactor);
 
-    // Draw connections from inputs to first hidden layer
-    int inputCount = nn->topology[0];
-    int firstHiddenCount = nn->layers[0]->neuronCount;
-
-    // Calculate centered positions for inputs
-    int inputStartY = y + (maxNeurons - inputCount + 1) * neuronSpacing / 2;
-    int firstHiddenStartY = y + (maxNeurons - firstHiddenCount + 1) * neuronSpacing / 2;
-
-    // Unified opacity values - less connections = more visible
-    float connectionCount = (float)(inputCount * firstHiddenCount);
-    float visibilityBoost = 1.0f + (200.0f / connectionCount); // Boost for fewer connections
-    float baseOpacity = 50.0f * (1.0f - opacityReductionFactor) * visibilityBoost;
-    float intensityRange = 100.0f * (1.0f - opacityReductionFactor) * visibilityBoost;
-
-    for (int j = 0; j < inputCount; j++)
+    // PHASE 1: Draw all connections (background layer)
+    for (int layerIdx = 0; layerIdx < layerCount; layerIdx++)
     {
-        int inputX = x;
-        int inputY = inputStartY + (j + 1) * neuronSpacing;
+        NeuralLayer *layer = nn->layers[layerIdx];
 
-        for (int k = 0; k < firstHiddenCount; k++)
+        // Source layer info (what feeds into this layer)
+        int sourceSize = nn->topology[layerIdx];
+        int sourceStartY = y + (maxNeurons - sourceSize + 1) * neuronSpacing / 2;
+        int sourceX = x + layerIdx * layerSpacing;
+
+        // Destination layer info (what this layer outputs to)
+        int destSize = nn->topology[layerIdx + 1];
+        int destStartY = y + (maxNeurons - destSize + 1) * neuronSpacing / 2;
+        int destX = x + (layerIdx + 1) * layerSpacing;
+
+        // Draw connections
+        for (int srcIdx = 0; srcIdx < sourceSize; srcIdx++)
         {
-            int firstLayerX = x + layerSpacing;
-            int firstLayerY = firstHiddenStartY + (k + 1) * neuronSpacing;
-            int weightIndex = j * firstHiddenCount + k;
-            float weight = nn->layers[0]->weights[weightIndex];
+            int srcY = sourceStartY + (srcIdx + 1) * neuronSpacing;
 
-            float sourceActivation = cell->inputs[j];
-            float destActivation = nn->layers[0]->outputs[k];
-            float connectionIntensity = fabs(sourceActivation * destActivation * weight);
-
-            int opacity = (int)(baseOpacity + intensityRange * fmin(connectionIntensity, 1.0f));
-
-            if (weight < 0)
-                SDL_SetRenderDrawColor(renderer, 220, 80, 80, opacity);
-            else
-                SDL_SetRenderDrawColor(renderer, 80, 220, 120, opacity);
-
-            if (!cell->isAlive)
-                SDL_SetRenderDrawColor(renderer, 100, 100, 100, opacity / 2);
-
-            SDL_RenderDrawLine(renderer, inputX, inputY, firstLayerX, firstLayerY);
-        }
-    }
-
-    // Draw connections between hidden layers and to output
-    for (int i = 0; i < layerCount; i++)
-    {
-        NeuralLayer *layer = nn->layers[i];
-        if (layer->nextLayerNeuronCount == 0) continue;
-
-        int currentSize = (i == 0) ? firstHiddenCount : layer->neuronCount;
-        int nextSize = layer->nextLayerNeuronCount;
-
-        // Calculate centered positions
-        int currentStartY = y + (maxNeurons - currentSize + 1) * neuronSpacing / 2;
-        int nextStartY = y + (maxNeurons - nextSize + 1) * neuronSpacing / 2;
-
-        // Opacity values - less connections = more visible
-        float layerConnectionCount = (float)(currentSize * nextSize);
-        float layerVisibilityBoost = 1.0f + (200.0f / layerConnectionCount); // Boost for fewer connections
-        float layerBaseOpacity = 50.0f * (1.0f - opacityReductionFactor) * layerVisibilityBoost;
-        float layerIntensityRange = 100.0f * (1.0f - opacityReductionFactor) * layerVisibilityBoost;
-        bool isToOutput = (i == layerCount - 1);
-
-        for (int j = 0; j < currentSize; j++)
-        {
-            int currentX = x + (i + 1) * layerSpacing;
-            int currentY = currentStartY + (j + 1) * neuronSpacing;
-
-            for (int k = 0; k < nextSize; k++)
+            for (int destIdx = 0; destIdx < destSize; destIdx++)
             {
-                int nextX = x + (i + 2) * layerSpacing;
-                int nextY = nextStartY + (k + 1) * neuronSpacing;
-                int weightIndex = j * nextSize + k;
-                float weight = layer->weights[weightIndex];
+                int destY = destStartY + (destIdx + 1) * neuronSpacing;
+                int weightIdx = srcIdx * destSize + destIdx;
+                float weight = layer->weights[weightIdx];
 
-                float sourceActivation = (i == 0) ? nn->layers[0]->outputs[j] : layer->outputs[j];
-                float destActivation = isToOutput ? cell->outputs[k] : nn->layers[i + 1]->outputs[k];
-                float connectionIntensity = fabs(sourceActivation * destActivation * weight);
+                // Calculate connection intensity
+                float srcActivation = (layerIdx == 0) ? cell->inputs[srcIdx] : nn->layers[layerIdx - 1]->outputs[srcIdx];
+                float destActivation = layer->outputs[destIdx];
+                float intensity = fabs(srcActivation * destActivation * weight);
 
-                int opacity = (int)(layerBaseOpacity + layerIntensityRange * fmin(connectionIntensity, 1.0f));
+                int opacity = (int)(baseOpacity + intensityRange * fmin(intensity, 1.0f));
 
-                // Pure control by opacityReductionFactor - no special treatment
-
+                // Color based on weight sign
                 if (weight < 0)
                     SDL_SetRenderDrawColor(renderer, 220, 80, 80, opacity);
                 else
@@ -518,125 +456,77 @@ void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, 
                 if (!cell->isAlive)
                     SDL_SetRenderDrawColor(renderer, 100, 100, 100, opacity / 2);
 
-                SDL_RenderDrawLine(renderer, currentX, currentY, nextX, nextY);
+                SDL_RenderDrawLine(renderer, sourceX, srcY, destX, destY);
             }
         }
     }
 
     // PHASE 2: Draw all neurons (foreground layer)
-
-    // First, draw input neurons at position 0
-    for (int j = 0; j < inputCount; j++)
+    for (int layerIdx = 0; layerIdx <= layerCount; layerIdx++)
     {
-        int inputX = x;
-        int inputY = inputStartY + (j + 1) * neuronSpacing;
-        Uint8 opacity = (Uint8)(cell->inputs[j] * 255);
+        int neuronCount = nn->topology[layerIdx];
+        int neuronStartY = y + (maxNeurons - neuronCount + 1) * neuronSpacing / 2;
+        int neuronX = x + layerIdx * layerSpacing;
 
-        if (opacity == 0)
+        for (int neuronIdx = 0; neuronIdx < neuronCount; neuronIdx++)
         {
-            SDL_SetRenderDrawColor(renderer, 255, 180, 53, 125);
-            if (!cell->isAlive)
-                SDL_SetRenderDrawColor(renderer, 125, 125, 125, 125);
-            SDL_RenderDrawCircleOutline(renderer, inputX, inputY, 10);
-        }
+            int neuronY = neuronStartY + (neuronIdx + 1) * neuronSpacing;
 
-        SDL_SetRenderDrawColor(renderer, 255, 180, 53, opacity);
-        if (!cell->isAlive)
-            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
-        SDL_RenderDrawCircle(renderer, inputX, inputY, 10);
-    }
-
-    // Draw all hidden layers
-    for (int i = 0; i < layerCount; i++)
-    {
-        int layerX = x + (i + 1) * layerSpacing;
-        NeuralLayer *layer = nn->layers[i];
-
-        // Each layer draws its own neurons (the ones that have outputs)
-        int currentSize = (i == 0) ? firstHiddenCount : layer->neuronCount;
-        int currentStartY = y + (maxNeurons - currentSize + 1) * neuronSpacing / 2;
-
-        for (int j = 0; j < currentSize; j++)
-        {
-            int neuronY = currentStartY + (j + 1) * neuronSpacing;
-
-            // Get the correct activation value
-            float activation = (i == 0) ? nn->layers[0]->outputs[j] : layer->outputs[j];
-            int neuronOpacity = (int)(255.0f * (fabs(activation) + 1.0f) / 2.0f);
-
-            // Color scheme: hidden layers vs output layer
+            // Get activation and determine colors
+            float activation;
             int red, green, blue;
+            Uint8 opacity;
 
-            if (layer->nextLayerNeuronCount == 0)
+            if (layerIdx == 0)
             {
-                // This is the output layer (last layer has nextLayerNeuronCount = 0)
+                // Input layer (orange)
+                activation = cell->inputs[neuronIdx];
+                opacity = (Uint8)(activation * 255);
+                red = 255; green = 180; blue = 53;
+
+                // Draw outline for inactive inputs
+                if (opacity == 0)
+                {
+                    SDL_SetRenderDrawColor(renderer, red, green, blue, 125);
+                    if (!cell->isAlive)
+                        SDL_SetRenderDrawColor(renderer, 125, 125, 125, 125);
+                    SDL_RenderDrawCircleOutline(renderer, neuronX, neuronY, 10);
+                }
+            }
+            else if (layerIdx == layerCount)
+            {
+                // Output layer (blue)
+                activation = cell->outputs[neuronIdx];
+                opacity = activation > 0.5 ? 255 : 125;
                 red = 125; green = 125; blue = 255;
 
-                // Modulate based on output bias
-                float bias = layer->biases[j];
+                // Modulate color based on bias
+                float bias = nn->layers[layerIdx - 1]->biases[neuronIdx];
                 if (bias > 0.1f)
-                {
-                    green = (int)(125 + 80 * fmin(bias, 1.0f)); // More green for positive bias
-                }
+                    green = (int)(125 + 80 * fmin(bias, 1.0f));
                 else if (bias < -0.1f)
-                {
-                    red = (int)(125 + 80 * fmin(fabs(bias), 1.0f)); // More red for negative bias
-                }
+                    red = (int)(125 + 80 * fmin(fabs(bias), 1.0f));
             }
             else
             {
-                // Hidden layer neurons
+                // Hidden layer (green)
+                activation = nn->layers[layerIdx - 1]->outputs[neuronIdx];
+                opacity = (Uint8)(255.0f * (fabs(activation) + 1.0f) / 2.0f);
                 red = 0; green = 200; blue = 161;
 
-                // Modulate based on bias (for i=0, use layer biases; for others, use previous layer's next layer biases)
-                float bias = (i == 0) ? layer->biases[j] : layer->biases[j];
+                // Modulate color based on bias
+                float bias = nn->layers[layerIdx - 1]->biases[neuronIdx];
                 if (bias > 0.1f)
-                {
-                    green = (int)(200 + 55 * fmin(bias, 1.0f)); // More green for positive bias
-                }
+                    green = (int)(200 + 55 * fmin(bias, 1.0f));
                 else if (bias < -0.1f)
-                {
-                    red = (int)(55 * fmin(fabs(bias), 1.0f)); // Some red for negative bias
-                }
+                    red = (int)(55 * fmin(fabs(bias), 1.0f));
             }
 
-            SDL_SetRenderDrawColor(renderer, red, green, blue, neuronOpacity);
+            SDL_SetRenderDrawColor(renderer, red, green, blue, opacity);
             if (!cell->isAlive)
-            {
-                SDL_SetRenderDrawColor(renderer, 125, 125, 125, neuronOpacity);
-            }
-            SDL_RenderDrawCircle(renderer, layerX, neuronY, 10);
+                SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
+
+            SDL_RenderDrawCircle(renderer, neuronX, neuronY, 10);
         }
-    }
-
-    // Draw output neurons (final layer)
-    NeuralLayer *outputLayer = nn->layers[layerCount - 1];
-    int outputX = x + (layerCount + 1) * layerSpacing;
-    int outputStartY = y + (maxNeurons - outputLayer->nextLayerNeuronCount + 1) * neuronSpacing / 2;
-
-    for (int i = 0; i < outputLayer->nextLayerNeuronCount; i++)
-    {
-        int outputY = outputStartY + (i + 1) * neuronSpacing;
-        Uint8 opacity = cell->outputs[i] > 0.5 ? 255 : 125;
-
-        // Output neurons are blue with bias modulation
-        int red = 125, green = 125, blue = 255;
-        float outputBias = outputLayer->biases[i];
-
-        if (outputBias > 0.1f)
-        {
-            green = (int)(125 + 80 * fmin(outputBias, 1.0f)); // More green for positive bias
-        }
-        else if (outputBias < -0.1f)
-        {
-            red = (int)(125 + 80 * fmin(fabs(outputBias), 1.0f)); // More red for negative bias
-        }
-
-        SDL_SetRenderDrawColor(renderer, red, green, blue, opacity);
-        if (!cell->isAlive)
-        {
-            SDL_SetRenderDrawColor(renderer, 125, 125, 125, opacity);
-        }
-        SDL_RenderDrawCircle(renderer, outputX, outputY, 10);
     }
 }

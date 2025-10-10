@@ -146,7 +146,7 @@ void Render_Text(Map *map, SDL_Color color)
     stringRGBA(map->renderer, 850, 100, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "I: Enable/Disable render of cells");
-    stringRGBA(map->renderer, 850, 120, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 850, 125, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "V: Enable/Disable vertical sync");
     stringRGBA(map->renderer, 850, 150, message, color.r, color.g, color.b, color.a);
