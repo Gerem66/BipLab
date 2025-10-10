@@ -52,7 +52,7 @@ void Game_render(SDL_Renderer *renderer, Map *map)
     // Score evolution graph
     if (map->renderScoreGraph)
     {
-        Render_ScoreGraph(map, renderer, 50, 550, 400, 200);
+        Graph_Render(&map->graphData, renderer, 50, 550, 400, 200);
     }
 
     // Text information overlay
@@ -168,57 +168,4 @@ void Render_Text(Map *map, SDL_Color color)
 
     sprintf(message, "Esc: Quit");
     stringRGBA(map->renderer, 850, 300, message, color.r, color.g, color.b, color.a);
-}
-
-void Render_ScoreGraph(Map *map, SDL_Renderer *renderer, int x, int y, int width, int height)
-{
-    if (map->scoreHistory == NULL) {
-        return;
-    }
-
-    SDL_Color bgColor = {0, 0, 0, 180};
-    SDL_Color borderColor = {255, 255, 255, 255};
-    SDL_Color lineColor = {0, 255, 0, 255};
-    SDL_Color gridColor = {100, 100, 100, 100};
-
-    // Draw background
-    SDL_Rect bgRect = {x, y, width, height};
-    SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-    SDL_RenderFillRect(renderer, &bgRect);
-
-    // Draw border
-    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-    SDL_RenderDrawRect(renderer, &bgRect);
-
-    // Find maximum score for scaling
-    int maxScore = 1;
-    for (int i = 0; i < map->scoreHistoryCount; i++) {
-        if (map->scoreHistory[i] > maxScore) {
-            maxScore = map->scoreHistory[i];
-        }
-    }
-
-    // Draw horizontal grid lines
-    SDL_SetRenderDrawColor(renderer, gridColor.r, gridColor.g, gridColor.b, gridColor.a);
-    for (int i = 1; i < 5; i++) {
-        int gridY = y + (height * i) / 5;
-        SDL_RenderDrawLine(renderer, x, gridY, x + width, gridY);
-    }
-
-    // Draw evolution curve
-    SDL_SetRenderDrawColor(renderer, lineColor.r, lineColor.g, lineColor.b, lineColor.a);
-
-    for (int i = 1; i < map->scoreHistoryCount; i++) {
-        int x1 = x + ((i - 1) * width) / (map->scoreHistoryCount - 1);
-        int y1 = y + height - (map->scoreHistory[i - 1] * height) / maxScore;
-        int x2 = x + (i * width) / (map->scoreHistoryCount - 1);
-        int y2 = y + height - (map->scoreHistory[i] * height) / maxScore;
-
-        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
-    }
-
-    // Title and labels
-    char message[100];
-    sprintf(message, "Complete Evolution - Gen %d (Max: %d)", map->scoreHistoryCount, maxScore);
-    stringRGBA(renderer, x + 5, y - 20, message, 255, 255, 255, 255);
 }

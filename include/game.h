@@ -16,6 +16,7 @@ typedef struct Map Map;
 #include "popup.h"
 #include "checkpoint.h"
 #include "neuralNetwork.h"
+#include "graph.h"
 
 // Maximum number in memory
 #define CELL_COUNT 1000
@@ -50,7 +51,6 @@ typedef struct Map Map;
 #define NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX 20
 
 // Evolution settings
-#define SCORE_HISTORY_MAX_SIZE 10000
 #define EVOLUTION_PARENT_SELECTION_RATIO 0.1f
 
 // Settings
@@ -101,10 +101,8 @@ struct Map
     int currentUPS;
     float currentGPS;
 
-    // Score graph tracking
-    #define SCORE_HISTORY_MAX_SIZE 10000  // Maximum de générations à traquer
-    int *scoreHistory;  // Historique des meilleurs scores par génération (allocation dynamique)
-    int scoreHistoryCount;  // Nombre de générations enregistrées
+    // Graph system
+    GraphData graphData;
 };
 
 
@@ -114,7 +112,6 @@ void Game_update(Map *map);
 void Game_reset(Map *map, bool fullReset);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
-void Render_ScoreGraph(Map *map, SDL_Renderer *renderer, int x, int y, int width, int height);
 
 bool Game_exists(char *filename);
 bool Game_save(Map *map, char *filename);

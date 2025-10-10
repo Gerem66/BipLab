@@ -81,4 +81,7 @@ void Game_update(Map *map)
             oldestCell = map->cells[i];
     if (oldestCell->generation > map->maxGeneration)
         map->maxGeneration = oldestCell->generation;
+
+    // Check graph timeout
+    Graph_CheckTimeout(&map->graphData, map);
 }

@@ -51,16 +51,8 @@ void Game_reset(Map *map, bool fullReset)
             bestParents[i] = cellScores[i].cell;
         }
 
-        // Update max score with the best cell
-        if (validCellCount > 0 && cellScores[0].score > map->maxScore) {
-            map->maxScore = cellScores[0].score;
-        }
-
-        // Save score history for graph (best score of generation)
-        if (validCellCount > 0 && map->scoreHistoryCount < SCORE_HISTORY_MAX_SIZE) {
-            map->scoreHistory[map->scoreHistoryCount] = cellScores[0].score;
-            map->scoreHistoryCount++;
-        }
+        // Add point to graph for this generation
+        Graph_AddPoint(&map->graphData, map);
     }
 
     // Reset & mutate cells using selected parents
