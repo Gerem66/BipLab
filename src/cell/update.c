@@ -9,7 +9,7 @@ static inline void set_onehot(double* out4, int k){
 }
 
 // Normalize "value" field depending on hit kind:
-// - FOOD:   value = raw food amount -> normalize by FOOD_MAX_LIMIT
+// - FOOD:   value = raw food amount -> normalize by FOOD_ITEM_CAPACITY
 // - AGENT:  value = raw health -> normalize by agentMaxEnergy
 // - others: 0
 static inline double norm_value_for(const RayHit* h, double agentMaxEnergy, double foodMaxValue){
@@ -27,7 +27,7 @@ void Cell_update(Cell *cell, Map *map)
 
     // Update health
     cell->frame++;
-    if (cell->frame % cell->framePerHealth == 0)
+    if (cell->frame % FRAMES_PER_HEALTH_POINT == 0)
     {
         cell->health--;
         if (cell->health <= 0)
@@ -57,7 +57,7 @@ void Cell_update(Cell *cell, Map *map)
         cell->inputs[idx++] = dist_norm;
 
         // State value normalized by object type
-        double state_norm = hasHit ? norm_value_for(&r->hit, (double)cell->healthMax, (double)FOOD_MAX_LIMIT) : 0.0;
+        double state_norm = hasHit ? norm_value_for(&r->hit, (double)cell->healthMax, (double)FOOD_ITEM_CAPACITY) : 0.0;
         cell->inputs[idx++] = state_norm;
 
         // One-hot encoding for object type
@@ -109,7 +109,7 @@ void Cell_update(Cell *cell, Map *map)
                 cell->health -= CELL_BIRTH_HEALTH_SACRIFICE;
 
                 // Give score bonus for successful reproduction attempt
-                cell->score += CELL_BIRTH_SCORE_BONUS;
+                cell->score += CELL_BIRTH_SCORE_BONUS * cell->score;
 
                 // Create new cell
                 Cell_GiveBirth(cell, map);
@@ -219,16 +219,13 @@ void Cell_update(Cell *cell, Map *map)
 
                     if (map->foods[i]->value <= 0)
                     {
-                        map->foods[i]->value = FOOD_MAX_LIMIT;
+                        map->foods[i]->value = FOOD_ITEM_CAPACITY;
                         map->foods[i]->rect.x = rand() % (map->width - 100) + 50;
                         map->foods[i]->rect.y = rand() % (map->height - 100) + 50;
                     }
                 }
             }
         }
-
-        // Score over time
-        cell->score++;
     }
 
     // Ray casting for object detection

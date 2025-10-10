@@ -57,7 +57,6 @@ struct Cell
     int healthInit;
     int healthMax;
     int frame;
-    int framePerHealth;
     int birthCostMax;
 
     bool isAI;

@@ -14,7 +14,6 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->positionInit.y = y;
     cell->healthInit = CELL_START_HEALTH;
     cell->healthMax = CELL_MAX_HEALTH;
-    cell->framePerHealth = 20;
     cell->birthCostMax = 40;
 
     cell->speedMax = 3.0f;
@@ -45,8 +44,8 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topologySize = NEURAL_NETWORK_INIT_TOPOLOGY_SIZE;
-    int topology[] = NEURAL_NETWORK_INIT_TOPOLOGY;
+    int topologySize = NEURAL_NETWORK_TOPOLOGY_SIZE;
+    int topology[] = NEURAL_NETWORK_TOPOLOGY;
     cell->nn = createNeuralNetwork(topology, topologySize);
     setRandomWeights(cell->nn, -1, 1);
 
