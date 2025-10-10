@@ -4,6 +4,17 @@ void Game_render(SDL_Renderer *renderer, Map *map)
 {
     Utils_setBackgroundColor(renderer, COLOR_DARK_GREEN);
 
+    // === PARTIE 1: RENDU DU MONDE (avec zoom/pan) ===
+    
+    // Appliquer les transformations pour le monde
+    SDL_RenderSetViewport(renderer, &(SDL_Rect) {
+        -map->viewOffset.x,
+        -map->viewOffset.y,
+        map->width,
+        map->height
+    });
+    SDL_RenderSetScale(renderer, map->zoomFactor, map->zoomFactor);
+
     if (map->renderEnabled)
     {
         // Render foods
@@ -24,7 +35,13 @@ void Game_render(SDL_Renderer *renderer, Map *map)
             Cell_render(map->cells[map->currentBestCellIndex], map->renderer, map->renderRays, true);
     }
 
-    // Render neural network
+    // === PARTIE 2: RENDU DE L'UI (fixe à l'écran) ===
+    
+    // Réinitialiser les transformations pour l'UI
+    SDL_RenderSetViewport(renderer, NULL);  // Viewport par défaut (tout l'écran)
+    SDL_RenderSetScale(renderer, 1.0f, 1.0f);  // Pas de zoom pour l'UI
+
+    // Render neural network (UI fixe)
     if (map->renderNeuralNetwork)
     {
         int index = map->currentBestCellIndex;
@@ -32,18 +49,9 @@ void Game_render(SDL_Renderer *renderer, Map *map)
             NeuralNetwork_Render(map->cells[index], renderer, index, 900, 400, 300, 400);
     }
 
-    // Show messages
+    // Show messages (UI fixe)
     if (map->renderText)
         Render_Text(map, COLOR_LIGHT_GRAY);
-
-    // Zoom
-    SDL_RenderSetViewport(renderer, &(SDL_Rect) {
-        -map->viewOffset.x,
-        -map->viewOffset.y,
-        map->width,
-        map->height
-    });
-    SDL_RenderSetScale(renderer, map->zoomFactor, map->zoomFactor);
 
     // Update screen
     SDL_RenderPresent(renderer);
