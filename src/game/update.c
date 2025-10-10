@@ -13,6 +13,18 @@ void Game_update(Map *map)
 
     map->frames++;
 
+    // Compter les UPS (Updates Per Second)
+    static time_t lastUPSTime = 0;
+    static int updateCount = 0;
+    updateCount++;
+
+    time_t currentUPSTime = time(NULL);
+    if (currentUPSTime != lastUPSTime && lastUPSTime != 0) {
+        map->currentUPS = updateCount;
+        updateCount = 0;
+    }
+    lastUPSTime = currentUPSTime;
+
     // Update cells - Parallelized with OpenMP
 #ifdef HAVE_OPENMP
     #pragma omp parallel for

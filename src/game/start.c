@@ -13,6 +13,8 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.zoomFactor = 1.0f;
 
     map.startTime = time(NULL);
+    map.pausedTime = 0;
+
     map.generation = 1;
     map.maxGeneration = 1;
     map.frames = 1;
@@ -31,6 +33,12 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     // Initialize checkpoint variables
     map.lastCheckpointGeneration = 0;
     map.checkpointCounter = 0;
+
+    // Initialize performance tracking
+    map.previousGenFrames = 0;
+    map.currentFPS = 0;
+    map.currentUPS = 0;
+    map.currentGPS = 0.0f;
 
     // Initialize walls
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
@@ -186,6 +194,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     Uint32 lastRenderTime = SDL_GetTicks();
     Uint32 renderIntervalMs = (GAME_FPS_LIMIT > 0) ? (1000 / GAME_FPS_LIMIT) : 0;
 
+    // FPS tracking
+    static time_t lastFPSTime = 0;
+    static int renderFrameCount = 0;
+
     // Event loop
     while (!map.quit)
     {
@@ -197,17 +209,36 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Update
         Game_update(&map);
 
+        // Track paused time
+        static time_t lastPauseStart = 0;
+        if (!map.isRunning && lastPauseStart == 0) { // Pause started
+            lastPauseStart = time(NULL);
+        } else if (map.isRunning && lastPauseStart != 0) { // Pause ended
+            map.pausedTime += time(NULL) - lastPauseStart;
+            lastPauseStart = 0;
+        }
+
         // Render only if enough time has passed since last render (for FPS control)
         Uint32 currentTime = SDL_GetTicks();
         bool shouldRender = true;
-
         if (GAME_FPS_LIMIT > 0 && renderIntervalMs > 0) {
             shouldRender = (currentTime - lastRenderTime) >= renderIntervalMs;
         }
 
+        // Render if needed
         if (shouldRender) {
             Game_render(renderer, &map);
             lastRenderTime = currentTime;
+
+            // FPS tracking
+            renderFrameCount++;
+
+            time_t currentFPSTime = time(NULL);
+            if (currentFPSTime != lastFPSTime && lastFPSTime != 0) {
+                map.currentFPS = renderFrameCount;
+                renderFrameCount = 0;
+            }
+            lastFPSTime = currentFPSTime;
         }
 
         // Delay to cap framerate if vertical sync is enabled and FPS limit is set

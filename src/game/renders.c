@@ -58,41 +58,47 @@ void Render_Text(Map *map, SDL_Color color)
         if (map->cells[i] != NULL && map->cells[i]->isAlive)
             aliveCount++;
 
-    // Game informations
-    time_t currentTime = time(NULL) - map->startTime;
+    //
+    // Left column - Game info
+    //
 
-    // FPS approximatif
-    static time_t lastTime = 0;
-    static int frameCount = 0;
-    static int currentFPS = 0;
-    frameCount++;
-    if (currentTime != lastTime) {
-        currentFPS = frameCount;
-        frameCount = 0;
-        lastTime = currentTime;
-    }
-
-    // Game info
-    sprintf(message, "Time: %dm %ds (Frame %d)", (int)(currentTime / 60), (int)(currentTime % 60), map->frames % 1000);
+    // Time
+    time_t effectiveTime = time(NULL) - map->startTime - map->pausedTime;
+    sprintf(message, "Time: %dm %ds", (int)(effectiveTime / 60), (int)(effectiveTime % 60));
     stringRGBA(map->renderer, 100, 25, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "FPS: ~%d (V-Sync: %s)", currentFPS, map->verticalSync ? "ON" : "OFF");
+    // Frames de la génération actuelle (frames de la génération précédente)
+    sprintf(message, "Frames: %d (%d prev gen)", map->frames, map->previousGenFrames);
     stringRGBA(map->renderer, 100, 50, message, color.r, color.g, color.b, color.a);
+
+    // FPS (rendu), UPS (update) et GPS (générations)
+    sprintf(message, "FPS: %d | UPS: %d | GPS: %.2f", map->currentFPS, map->currentUPS, map->currentGPS);
+    stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
 
     // Checkpoint informations
     int gensSinceCheckpoint = map->generation - map->lastCheckpointGeneration;
     sprintf(message, "Checkpoints: %d saved (next in %d gen)", map->checkpointCounter, CHECKPOINT_SAVE_INTERVAL - gensSinceCheckpoint);
-    stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
+
+    //
+    // Middle column - Cells info
+    //
 
     // Generation and cells info
     sprintf(message, "Generation: %d (max cell gen: %d)", map->generation, map->maxGeneration);
     stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
 
+    // Cells count
     sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
     stringRGBA(map->renderer, 500, 50, message, color.r, color.g, color.b, color.a);
 
+    // Best score
     sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
     stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
+
+    //
+    // Optional player info
+    //
 
 #if CELL_AS_PLAYER
     // Player informations
@@ -109,7 +115,10 @@ void Render_Text(Map *map, SDL_Color color)
     stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
 #endif
 
-    // Render controls
+    //
+    // Right column - Render controls
+    //
+
     sprintf(message, "N: Show/Hide neural network");
     stringRGBA(map->renderer, 850, 25, message, color.r, color.g, color.b, color.a);
 

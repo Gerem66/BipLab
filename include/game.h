@@ -37,8 +37,8 @@ typedef struct Map Map;
 #define FOOD_MAX_LIMIT 20
 
 // Neural network settings
-#define NEURAL_NETWORK_INIT_TOPOLOGY_SIZE 8
-#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 30, 20, 10, 10, 10, 5, 3 }
+#define NEURAL_NETWORK_INIT_TOPOLOGY_SIZE 6
+#define NEURAL_NETWORK_INIT_TOPOLOGY { 44, 64, 64, 64, 32, 3 }
 #define NEURAL_NETWORK_RESET_MUTATION_RATE 0.1f
 #define NEURAL_NETWORK_RESET_MUTATION_PROB 0.2f
 #define NEURAL_NETWORK_CHILD_MUTATION_RATE 0.05f
@@ -64,6 +64,8 @@ struct Map
     float zoomFactor;
 
     time_t startTime;
+    time_t pausedTime;
+
     Cell *cells[CELL_COUNT];
     Food *foods[FOOD_COUNT];
     Wall *walls[WALL_COUNT];
@@ -87,6 +89,12 @@ struct Map
     // Checkpoint tracking
     int lastCheckpointGeneration;
     int checkpointCounter;
+
+    // Performance tracking
+    int previousGenFrames;
+    int currentFPS;
+    int currentUPS;
+    float currentGPS;
 };
 
 

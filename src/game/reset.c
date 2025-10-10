@@ -42,7 +42,7 @@ void Game_reset(Map *map, bool fullReset)
             fprintf(stderr, "Error while reviving cells !\n");
             return;
         }
-        
+
         NeuralNetwork *newNN = NeuralNetwork_Copy(bestCell->nn);
         if (newNN == NULL)
         {
@@ -69,6 +69,25 @@ void Game_reset(Map *map, bool fullReset)
     // Reset walls state
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
         Wall_reset(map->walls[i], map);
+
+    // Sauvegarder les frames de la génération qui se termine
+    map->previousGenFrames = map->frames;
+
+    // Calculer le GPS (Generations Per Second)
+    static time_t lastGenTime = 0;
+    static int generationCount = 0;
+    static time_t firstGenTime = 0;
+
+    time_t effectiveTime = time(NULL) - map->startTime - map->pausedTime;
+    if (firstGenTime == 0) {
+        firstGenTime = effectiveTime;
+    }
+
+    generationCount++;
+    if (effectiveTime > firstGenTime && effectiveTime != lastGenTime) {
+        map->currentGPS = (float)generationCount / (float)(effectiveTime - firstGenTime);
+    }
+    lastGenTime = effectiveTime;
 
     map->frames = 1;
     map->generation++;
