@@ -64,7 +64,18 @@ void Game_events(Map *map, SDL_Event *event)
                 map->lastCheckpointGeneration = map->generation;
                 break;
             case SDLK_g:
-                map->renderScoreGraph = !map->renderScoreGraph;
+                // Check if Shift is pressed
+                if (SDL_GetModState() & KMOD_SHIFT) {
+                    // Maj+G: Open/close graph in separate window
+                    if (map->graphWindowOpen) {
+                        Game_DestroyGraphWindow(map);
+                    } else {
+                        Game_CreateGraphWindow(map);
+                    }
+                } else {
+                    // G: Toggle graph in main window
+                    map->renderScoreGraph = !map->renderScoreGraph;
+                }
                 break;
             default:
                 break;

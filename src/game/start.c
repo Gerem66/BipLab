@@ -56,6 +56,11 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     Evolution_InitMutationParams(&map.mutationParams);
     memset(&map.evolutionMetrics, 0, sizeof(EvolutionMetrics));
 
+    // Initialize graph window
+    map.graphWindow = NULL;
+    map.graphRenderer = NULL;
+    map.graphWindowOpen = false;
+
     // Initialize walls
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
     {
@@ -244,6 +249,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         // Render if needed
         if (shouldRender) {
             Game_render(renderer, &map);
+
+            // Render graph window if open
+            Game_RenderGraphWindow(&map);
+
             lastRenderTime = currentTime;
 
             // FPS tracking
@@ -285,6 +294,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
                 "An error occured while saving the neural network !"
             );
     }
+
+    // Clean up graph window
+    Game_DestroyGraphWindow(&map);
 
     // Free graph system
     Graph_Free(&map.graphData);
