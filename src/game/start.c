@@ -12,6 +12,9 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.height = h;
     map.viewOffset = (SDL_Point) { 0, 0 };
     map.zoomFactor = 1.0f;
+    map.isDragging = false;
+    map.dragStartMouse = (SDL_Point) { 0, 0 };
+    map.dragStartView = (SDL_Point) { 0, 0 };
 
     map.startTime = time(NULL);
     map.pausedTime = 0;

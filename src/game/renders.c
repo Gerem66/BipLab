@@ -6,40 +6,74 @@ void Game_render(SDL_Renderer *renderer, Map *map)
 
     // === WORLD RENDERING (with zoom/pan) ===
 
-    // Apply transformations for world objects
-    SDL_RenderSetViewport(renderer, &(SDL_Rect) {
-        -map->viewOffset.x,
-        -map->viewOffset.y,
-        map->width,
-        map->height
-    });
+    // Save current transformations
+    float scaleX, scaleY;
+    SDL_RenderGetScale(renderer, &scaleX, &scaleY);
+
+    // Apply zoom and panning for world objects
     SDL_RenderSetScale(renderer, map->zoomFactor, map->zoomFactor);
+
+    // Calculate coordinates with offset for rendering
+    int offsetX = (int)(-map->viewOffset.x);
+    int offsetY = (int)(-map->viewOffset.y);
 
     if (map->renderEnabled)
     {
-        // Render foods
-        for (int i = 0; i < GAME_START_FOOD_COUNT; ++i)
+        // Render foods with offset
+        for (int i = 0; i < GAME_START_FOOD_COUNT; ++i) {
+            // Save original position
+            SDL_FRect originalRect = map->foods[i]->rect;
+            // Apply offset
+            map->foods[i]->rect.x += offsetX;
+            map->foods[i]->rect.y += offsetY;
             Food_render(map->foods[i], map->renderer, map->renderText);
+            // Restore original position
+            map->foods[i]->rect = originalRect;
+        }
 
-        // Render cells
-        for (int i = 0; i < map->cellCount; ++i)
-            if (map->cells[i] != NULL)
+        // Render cells with offset
+        for (int i = 0; i < map->cellCount; ++i) {
+            if (map->cells[i] != NULL) {
+                // Save original position
+                SDL_FPoint originalPos = map->cells[i]->position;
+                // Apply offset
+                map->cells[i]->position.x += offsetX;
+                map->cells[i]->position.y += offsetY;
                 Cell_render(map->cells[i], map->renderer, map->renderRays, i == map->currentBestCellIndex);
+                // Restore original position
+                map->cells[i]->position = originalPos;
+            }
+        }
 
-        // Render walls
-        for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
+        // Render walls with offset
+        for (int i = 0; i < GAME_START_WALL_COUNT; ++i) {
+            // Save original position
+            SDL_FRect originalRect = map->walls[i]->rect;
+            // Apply offset
+            map->walls[i]->rect.x += offsetX;
+            map->walls[i]->rect.y += offsetY;
             Wall_render(map->walls[i], map->renderer);
+            // Restore original position
+            map->walls[i]->rect = originalRect;
+        }
     } else {
         // Render only the best cell when others are hidden
-        if (map->cells[map->currentBestCellIndex] != NULL)
+        if (map->cells[map->currentBestCellIndex] != NULL) {
+            // Save original position
+            SDL_FPoint originalPos = map->cells[map->currentBestCellIndex]->position;
+            // Apply offset
+            map->cells[map->currentBestCellIndex]->position.x += offsetX;
+            map->cells[map->currentBestCellIndex]->position.y += offsetY;
             Cell_render(map->cells[map->currentBestCellIndex], map->renderer, map->renderRays, true);
+            // Restore original position
+            map->cells[map->currentBestCellIndex]->position = originalPos;
+        }
     }
 
     // === UI RENDERING (screen-fixed) ===
 
-    // Reset transformations for UI elements
-    SDL_RenderSetViewport(renderer, NULL);
-    SDL_RenderSetScale(renderer, 1.0f, 1.0f);
+    // Restore original transformations for UI
+    SDL_RenderSetScale(renderer, scaleX, scaleY);
 
     // Neural network visualization
     if (map->renderNeuralNetwork)
@@ -81,11 +115,11 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Time: %dm %ds", (int)(effectiveTime / 60), (int)(effectiveTime % 60));
     stringRGBA(map->renderer, 100, 25, message, color.r, color.g, color.b, color.a);
 
-    // Frames de la génération actuelle (frames de la génération précédente)
-    sprintf(message, "Frames: %d (%d prev gen)", map->frames, map->previousGenFrames);
+    // Current generation frames (previous generation frames)
+    sprintf(message, "Frame: %d (%d prev gen)", map->frames, map->previousGenFrames);
     stringRGBA(map->renderer, 100, 50, message, color.r, color.g, color.b, color.a);
 
-    // FPS (rendu), UPS (update) et GPS (générations)
+    // FPS (render), UPS (update) and GPS (generations)
     sprintf(message, "FPS: %d | UPS: %d | GPS: %.2f", map->currentFPS, map->currentUPS, map->currentGPS);
     stringRGBA(map->renderer, 100, 75, message, color.r, color.g, color.b, color.a);
 

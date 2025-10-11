@@ -200,30 +200,30 @@ void render_rays(Cell *cell, SDL_Renderer *renderer)
                         cell->position.x + cell->rays[i].distanceMax * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
                         cell->position.y + cell->rays[i].distanceMax * sin(cell->rays[i].angle + cell->angle * PI / 180.0f));
 
-        // Rendu de l'intersection avec couleur selon le type d'objet détecté
+        // Render intersection with color based on detected object type
         if (cell->rays[i].hit.type != RAY_OBJECT_NONE)
         {
-            // Couleur selon le type d'objet
+            // Color based on object type
             switch (cell->rays[i].hit.type)
             {
                 case RAY_OBJECT_FOOD:
-                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Vert pour nourriture
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Green for food
                     break;
                 case RAY_OBJECT_CELL:
-                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rouge pour cellules
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red for cells
                     break;
                 case RAY_OBJECT_WALL:
-                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Gris pour murs
+                    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Gray for walls
                     break;
                 default:
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Blanc par défaut
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White by default
                     break;
             }
 
             SDL_RenderFillCircle(renderer,
                                 cell->position.x + cell->rays[i].distance * cos(cell->rays[i].angle + cell->angle * PI / 180.0f),
                                 cell->position.y + cell->rays[i].distance * sin(cell->rays[i].angle + cell->angle * PI / 180.0f),
-                                3); // Légèrement plus gros pour mieux voir
+                                3); // Slightly bigger for better visibility
         }
     }
 }
@@ -259,15 +259,15 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
         // Use shiny sprites for selected cell (best score)
         CellSprites *sprites = isSelected ? shinySprites : normalSprites;
 
-        // Calcul de l'angle en radians
+        // Calculate angle in radians
         float rad = cell->angle * PI / 180.0f;
 
-        // Déterminer la texture à afficher : si l'angle est inférieur à 180°, on considère que la cellule regarde vers le bas (affiche les yeux)
-        // sinon elle regarde vers le haut (affiche l'arrière "ass")
+        // Determine texture to display: if angle is less than 180°, cell is facing down (show eyes)
+        // otherwise it's facing up (show back "ass")
         bool showEyes = (cell->angle < 180);
 
-        // Calcul de l'offset horizontal basé sur la composante horizontale
-        // Lorsque cell->angle == 0, cos(0)=1 (offset max positif), et pour cell->angle == 180, cos(180)=-1 (offset max négatif)
+        // Calculate horizontal offset based on horizontal component
+        // When cell->angle == 0, cos(0)=1 (max positive offset), and for cell->angle == 180, cos(180)=-1 (max negative offset)
         float tOffset = (cos(rad) + 1.0f) / 2.0f;
         float maxOffset = cell->radius * 0.4f;
         int offsetX = (int)(((tOffset - 0.5f) * 2.0f) * maxOffset);
@@ -282,22 +282,22 @@ void Cell_render(Cell *cell, SDL_Renderer *renderer, bool renderRays, bool isSel
 
         SDL_RendererFlip flip = SDL_FLIP_NONE;
 
-        // Affichage de la peau, toujours présente
+        // Display skin, always present
         SDL_RenderCopyEx(renderer, sprites->skin, NULL, &destRect, 0, NULL, flip);
 
         if (showEyes) {
-            // Lorsque la cellule regarde vers le bas (angle < 180°), afficher les yeux
+            // When cell is facing down (angle < 180°), display eyes
             SDL_Rect eyesRect = destRect;
             eyesRect.x += offsetX;
             SDL_RenderCopyEx(renderer, sprites->eyes, NULL, &eyesRect, 0, NULL, flip);
         } else {
-            // Lorsque la cellule regarde vers le haut (angle >= 180°), afficher l'arrière (ass) avec le décalage inversé
+            // When cell is facing up (angle >= 180°), display back (ass) with inverted offset
             SDL_Rect assRect = destRect;
             assRect.x -= offsetX;
             SDL_RenderCopyEx(renderer, sprites->ass, NULL, &assRect, 0, NULL, flip);
         }
 
-        // Toujours afficher la feuille par-dessus
+        // Always display leaf on top
         SDL_RenderCopyEx(renderer, sprites->leaf, NULL, &destRect, 0, NULL, flip);
     }
 

@@ -73,14 +73,14 @@ void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius)
 
 // By ChatGPT
 void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle) {
-    // Conversion des angles en radians
+    // Convert angles to radians
     double startRad = startAngle * (PI / 180.0);
     double endRad = endAngle * (PI / 180.0);
 
-    // Calcul de l'angle d'étape pour chaque itération
-    double step = PI / (2.0 * radius); // Plus le rayon est grand, plus l'étape peut être petite
+    // Calculate step angle for each iteration
+    double step = PI / (2.0 * radius); // The larger the radius, the smaller the step can be
 
-    // Dessiner l'arc point par point
+    // Draw arc point by point
     for (double theta = startRad; theta < endRad; theta += step) {
         int x = x0 + radius * cos(theta);
         int y = y0 + radius * sin(theta);

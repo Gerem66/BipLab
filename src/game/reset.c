@@ -110,10 +110,10 @@ void Game_reset(Map *map, bool fullReset)
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)
         Wall_reset(map->walls[i], map);
 
-    // Sauvegarder les frames de la génération qui se termine
+    // Save frames of the ending generation
     map->previousGenFrames = map->frames;
 
-    // Calculer le GPS (Generations Per Second)
+    // Calculate GPS (Generations Per Second)
     static time_t lastGenTime = 0;
     static int generationCount = 0;
     static time_t firstGenTime = 0;

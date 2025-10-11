@@ -18,6 +18,12 @@ typedef struct Map Map;
 #include "neuralNetwork.h"
 #include "graph.h"
 
+// Screen and game dimensions
+#define SCREEN_WIDTH    1200
+#define SCREEN_HEIGHT   800
+#define GAME_WIDTH      1200
+#define GAME_HEIGHT     800
+
 // Maximum number in memory
 #define CELL_COUNT 1000
 #define FOOD_COUNT 50
@@ -41,10 +47,10 @@ typedef struct Map Map;
 #define CELL_BIRTH_FAILED_PENALTY 2      // Health penalty for failed reproduction attempt
 
 // Neural network settings
-#define NEURAL_NETWORK_TOPOLOGY_SIZE 8
-#define NEURAL_NETWORK_TOPOLOGY { 44, 128, 96, 64, 32, 16, 8, 3 }
-#define NEURAL_NETWORK_RESET_MUTATION_RATE 0.2f
-#define NEURAL_NETWORK_RESET_MUTATION_PROB 0.3f
+#define NEURAL_NETWORK_TOPOLOGY_SIZE 12
+#define NEURAL_NETWORK_TOPOLOGY { 44, 128, 128, 128, 96, 64, 64, 64, 64, 32, 16, 3 }
+#define NEURAL_NETWORK_RESET_MUTATION_RATE 0.1f
+#define NEURAL_NETWORK_RESET_MUTATION_PROB 0.2f
 #define NEURAL_NETWORK_CHILD_MUTATION_RATE 0.05f
 #define NEURAL_NETWORK_CHILD_MUTATION_PROB 0.1f
 #define NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY 0.02f
@@ -69,6 +75,9 @@ struct Map
     int height;
     SDL_Point viewOffset;
     float zoomFactor;
+    bool isDragging;
+    SDL_Point dragStartMouse;
+    SDL_Point dragStartView;
 
     time_t startTime;
     time_t pausedTime;

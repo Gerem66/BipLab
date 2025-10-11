@@ -13,7 +13,7 @@ void Game_update(Map *map)
 
     map->frames++;
 
-    // Compter les UPS (Updates Per Second)
+    // Count UPS (Updates Per Second)
     static time_t lastUPSTime = 0;
     static int updateCount = 0;
     updateCount++;

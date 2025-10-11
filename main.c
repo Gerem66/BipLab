@@ -5,12 +5,6 @@
 
 #include "game.h"
 
-// Define screen dimensions
-#define SCREEN_WIDTH    1200
-#define SCREEN_HEIGHT   800
-#define GAME_WIDTH    1200
-#define GAME_HEIGHT   800
-
 int main(int argc, char* argv[])
 {
     // Unused argc, argv

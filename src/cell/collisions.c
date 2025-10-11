@@ -66,12 +66,12 @@ bool findIntersection(SDL_FPoint lineA1, SDL_FPoint lineA2,
     return false; // No collision
 }
 
-// Fonction pour calculer la distance entre deux points
+// Function to calculate distance between two points
 float distance(SDL_FPoint a, SDL_FPoint b) {
     return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-// Fonction principale pour trouver la distance d'intersection
+// Main function to find intersection distance
 float findIntersectionDistance(SDL_FPoint lineA1, SDL_FPoint lineA2, 
                                SDL_FPoint lineB1, SDL_FPoint lineB2) {
     SDL_FPoint intersection;
