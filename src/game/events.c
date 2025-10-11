@@ -106,12 +106,12 @@ void Game_events(Map *map, SDL_Event *event)
 
         // Scroll up
         if (event->wheel.y > 0) {
-            map->zoomFactor = CLAMP(map->zoomFactor + CONTROLS_ZOOM_SPEED, 1.0f, 10.0f);
+            map->zoomFactor = CLAMP(map->zoomFactor + CONTROLS_ZOOM_SPEED, CONTROLS_ZOOM_MIN, CONTROLS_ZOOM_MAX);
         }
 
         // Scroll down
         else if (event->wheel.y < 0) {
-            map->zoomFactor = CLAMP(map->zoomFactor - CONTROLS_ZOOM_SPEED, 1.0f, 10.0f);
+            map->zoomFactor = CLAMP(map->zoomFactor - CONTROLS_ZOOM_SPEED, CONTROLS_ZOOM_MIN, CONTROLS_ZOOM_MAX);
         }
 
         // Center view on mouse position when zooming

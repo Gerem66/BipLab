@@ -66,5 +66,7 @@
 #define CELL_USE_SPRITE     true
 #define CELL_AS_PLAYER      false
 #define CONTROLS_ZOOM_SPEED 0.2
+#define CONTROLS_ZOOM_MIN   1.0f
+#define CONTROLS_ZOOM_MAX   5.0f
 
 #endif // CONFIG_H

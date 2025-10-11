@@ -25,7 +25,7 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->hitbox.y = y - cell->radius;
     cell->hitbox.w = cell->radius * 2;
     cell->hitbox.h = cell->radius * 2;
-    
+
     // Set sprite
     cell->sprite = sprite;
 

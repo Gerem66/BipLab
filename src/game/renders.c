@@ -128,6 +128,11 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Checkpoints: %d saved (next in %d gen)", map->checkpointCounter, CHECKPOINT_SAVE_INTERVAL - gensSinceCheckpoint);
     stringRGBA(map->renderer, 100, 100, message, color.r, color.g, color.b, color.a);
 
+    // Zoom level indicator (only when zoomed)
+    sprintf(message, "Zoom: %.2fx", map->zoomFactor);
+    stringRGBA(map->renderer, 100, 125, message, color.r, color.g, color.b, color.a);
+    Render_ZoomBar(map, color, 100, 145);
+
     //
     // Middle column - Cells info
     //
@@ -144,13 +149,17 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
     stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
 
-    // Evolution info (improved display)
-    sprintf(message, "Mutation Rate: %.3f (child: %.3f) | Diversity: %.3f", map->mutationParams.resetMutationRate, map->mutationParams.childMutationRate, map->evolutionMetrics.diversityIndex);
+    // Diversity and convergence
+    sprintf(message, "Diversity: %.3f | Convergence: %.3f", map->evolutionMetrics.diversityIndex, map->evolutionMetrics.convergenceRate);
     stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
 
-    // Evolution probability info
-    sprintf(message, "Mutation Prob: %.3f (child: %.3f) | Convergence: %.3f", map->mutationParams.resetMutationProb, map->mutationParams.childMutationProb, map->evolutionMetrics.convergenceRate);
+    // Evolution info (improved display)
+    sprintf(message, "Mutation Rate: %.3f (child: %.3f)", map->mutationParams.resetMutationRate, map->mutationParams.childMutationRate);
     stringRGBA(map->renderer, 500, 125, message, color.r, color.g, color.b, color.a);
+
+    // Evolution probability info
+    sprintf(message, "Mutation Prob: %.3f (child: %.3f)", map->mutationParams.resetMutationProb, map->mutationParams.childMutationProb);
+    stringRGBA(map->renderer, 500, 150, message, color.r, color.g, color.b, color.a);
 
     // Color-coded stagnation warning
     SDL_Color stagnationColor = color;
@@ -160,7 +169,7 @@ void Render_Text(Map *map, SDL_Color color)
         stagnationColor = (SDL_Color){255, 200, 100, 255}; // Orange for warning
     }
     sprintf(message, "Stagnation: %d gen | AvgImpr: %.4f", map->evolutionMetrics.generationsSinceImprovement, map->evolutionMetrics.avgScoreImprovement);
-    stringRGBA(map->renderer, 500, 150, message, stagnationColor.r, stagnationColor.g, stagnationColor.b, stagnationColor.a);
+    stringRGBA(map->renderer, 500, 175, message, stagnationColor.r, stagnationColor.g, stagnationColor.b, stagnationColor.a);
 
     //
     // Optional player info
@@ -169,16 +178,16 @@ void Render_Text(Map *map, SDL_Color color)
 #if CELL_AS_PLAYER
     // Player informations
     sprintf(message, "Player pos: %d, %d", (int)map->cells[0]->position.x, (int)map->cells[0]->position.y);
-    stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 225, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Angle: %f", map->cells[0]->angle);
-    stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 250, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Speed: %f", map->cells[0]->speed);
-    stringRGBA(map->renderer, 500, 50, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 275, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Score: %d", map->cells[0]->score);
-    stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+    stringRGBA(map->renderer, 500, 300, message, color.r, color.g, color.b, color.a);
 #endif
 
     //
@@ -220,4 +229,47 @@ void Render_Text(Map *map, SDL_Color color)
 
     sprintf(message, "Esc: Quit");
     stringRGBA(map->renderer, 850, 300, message, color.r, color.g, color.b, color.a);
+}
+
+void Render_ZoomBar(Map *map, SDL_Color color, int x, int y)
+{
+    // Only show zoom bar when zoomed (not at default 1.0x)
+    if (fabs(map->zoomFactor - 1.0f) < 0.01f) {
+        return; // Don't show bar at default zoom
+    }
+
+    // Zoom bar (visual representation)
+    int barWidth = 150;
+    int barHeight = 8;
+
+    // Background bar (dark)
+    SDL_Rect bgRect = {x, y, barWidth, barHeight};
+    SDL_SetRenderDrawColor(map->renderer, 50, 50, 50, 255);
+    SDL_RenderFillRect(map->renderer, &bgRect);
+
+    // Border
+    SDL_SetRenderDrawColor(map->renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderDrawRect(map->renderer, &bgRect);
+
+    // Fill bar based on zoom level (range 0.1x to 5.0x)
+    float minZoom = 0.1f;
+    float maxZoom = 5.0f;
+    float clampedZoom = fmaxf(minZoom, fminf(maxZoom, map->zoomFactor));
+    float normalizedZoom = (clampedZoom - minZoom) / (maxZoom - minZoom);
+
+    int fillWidth = (int)(normalizedZoom * (barWidth - 2));
+    if (fillWidth > 0) {
+        SDL_Rect fillRect = {x + 1, y + 1, fillWidth, barHeight - 2};
+
+        // Color based on zoom level
+        if (map->zoomFactor < 0.5f) {
+            SDL_SetRenderDrawColor(map->renderer, 100, 150, 255, 255); // Blue for zoom out
+        } else if (map->zoomFactor > 2.0f) {
+            SDL_SetRenderDrawColor(map->renderer, 255, 150, 100, 255); // Orange for zoom in
+        } else {
+            SDL_SetRenderDrawColor(map->renderer, 100, 255, 100, 255); // Green for normal
+        }
+
+        SDL_RenderFillRect(map->renderer, &fillRect);
+    }
 }

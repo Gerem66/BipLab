@@ -152,9 +152,9 @@ void Cell_update(Cell *cell, Map *map)
         else if (cell->goingDown)
         {
             cell->speed -= cell->velocity;
-            cell->speed = MAX(cell->speed, cell->speedMax / 2);
+            cell->speed = MAX(cell->speed, -cell->speedMax / 2);
         }
-        if (cell->speed > 0.0f)
+        else if (cell->speed > 0.0f)
         {
             cell->speed -= cell->velocity;
             cell->speed = MAX(cell->speed, 0.0f);

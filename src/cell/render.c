@@ -56,34 +56,34 @@ bool load_all_cell_sprites(SDL_Renderer *renderer) {
 
     char basePath[256];
     char fullPath[512];
-    
+
     // Load normal sprites
     snprintf(basePath, sizeof(basePath), "../ressources/bipboup/normal/");
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
     normalSprites->skin = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
     normalSprites->leaf = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
     normalSprites->ass = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
     normalSprites->eyes = IMG_LoadTexture(renderer, fullPath);
 
     // Load shiny sprites
     snprintf(basePath, sizeof(basePath), "../ressources/bipboup/shiny/");
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
     shinySprites->skin = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
     shinySprites->leaf = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
     shinySprites->ass = IMG_LoadTexture(renderer, fullPath);
-    
+
     snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
     shinySprites->eyes = IMG_LoadTexture(renderer, fullPath);
 

@@ -41,8 +41,8 @@ bool check_rect_collision(Cell *cell, SDL_FRect *hitbox)
     return false;
 }
 
-bool findIntersection(SDL_FPoint lineA1, SDL_FPoint lineA2, 
-                      SDL_FPoint lineB1, SDL_FPoint lineB2, 
+bool findIntersection(SDL_FPoint lineA1, SDL_FPoint lineA2,
+                      SDL_FPoint lineB1, SDL_FPoint lineB2,
                       SDL_FPoint *intersection) {
     float s1_x, s1_y, s2_x, s2_y;
     s1_x = lineA2.x - lineA1.x;
@@ -72,7 +72,7 @@ float distance(SDL_FPoint a, SDL_FPoint b) {
 }
 
 // Main function to find intersection distance
-float findIntersectionDistance(SDL_FPoint lineA1, SDL_FPoint lineA2, 
+float findIntersectionDistance(SDL_FPoint lineA1, SDL_FPoint lineA2,
                                SDL_FPoint lineB1, SDL_FPoint lineB2) {
     SDL_FPoint intersection;
     if (findIntersection(lineA1, lineA2, lineB1, lineB2, &intersection)) {
@@ -97,9 +97,9 @@ float check_ray_collision(Cell *cell, SDL_FRect *hitbox, int rayIndex)
     float nearestDistance = ray->distanceMax;
 
     for (int i = 0; i < 4; i++) {
-        float newDistance = findIntersectionDistance(cell->position, 
-                                                     (SDL_FPoint){cell->position.x + cos(angle) * ray->distanceMax, 
-                                                                  cell->position.y + sin(angle) * ray->distanceMax}, 
+        float newDistance = findIntersectionDistance(cell->position,
+                                                     (SDL_FPoint){cell->position.x + cos(angle) * ray->distanceMax,
+                                                                  cell->position.y + sin(angle) * ray->distanceMax},
                                                      corners[i], corners[(i + 1) % 4]);
         if (newDistance != -1 && newDistance < nearestDistance) {
             nearestDistance = newDistance;
