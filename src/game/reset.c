@@ -51,12 +51,12 @@ void Game_reset(Map *map, bool fullReset)
             bestParents[i] = cellScores[i].cell;
         }
 
-        // Add point to graph for this generation
-        Graph_AddPoint(&map->graphData, map);
-
-        // Update evolution metrics and adapt mutation parameters
+        // Update evolution metrics and adapt mutation parameters BEFORE adding graph point
         Evolution_CalculateMetrics(map, &map->evolutionMetrics);
         Evolution_AdaptMutationParams(&map->evolutionMetrics, &map->mutationParams);
+
+        // Add synchronized point to all graph curves
+        Graph_AddPoint(&map->graphData, map);
     }
 
     // Reset & mutate cells using selected parents

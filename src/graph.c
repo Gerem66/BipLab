@@ -20,6 +20,14 @@ bool Graph_Init(GraphData *graph) {
         return false;
     }
 
+    graph->mutationHistory = malloc(GRAPH_HISTORY_MAX_SIZE * sizeof(float));
+    if (graph->mutationHistory == NULL) {
+        fprintf(stderr, "Failed to allocate memory for mutation history!\n");
+        free(graph->scoreHistory);
+        free(graph->maxGenerationHistory);
+        return false;
+    }
+
     graph->historyCount = 0;
     graph->lastUpdateFrame = 0;
 
@@ -37,6 +45,11 @@ void Graph_Free(GraphData *graph) {
     if (graph->maxGenerationHistory != NULL) {
         free(graph->maxGenerationHistory);
         graph->maxGenerationHistory = NULL;
+    }
+
+    if (graph->mutationHistory != NULL) {
+        free(graph->mutationHistory);
+        graph->mutationHistory = NULL;
     }
 
     graph->historyCount = 0;
@@ -64,10 +77,14 @@ void Graph_AddPoint(GraphData *graph, Map *map) {
         }
     }
 
-    // Add point to graph
+    // Add point to graph (including mutation intensity)
     if (validCellCount > 0) {
+        // Calculate mutation intensity as rate * probability (represents total change potential)
+        float mutationIntensity = map->mutationParams.resetMutationRate * map->mutationParams.resetMutationProb;
+
         graph->scoreHistory[graph->historyCount] = bestScore;
         graph->maxGenerationHistory[graph->historyCount] = maxGeneration;
+        graph->mutationHistory[graph->historyCount] = mutationIntensity;
         graph->historyCount++;
         graph->lastUpdateFrame = map->frames;
 
@@ -88,7 +105,7 @@ void Graph_CheckTimeout(GraphData *graph, Map *map) {
 }
 
 void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int width, int height) {
-    if (graph == NULL || graph->scoreHistory == NULL || graph->maxGenerationHistory == NULL) {
+    if (graph == NULL || graph->scoreHistory == NULL || graph->maxGenerationHistory == NULL || graph->mutationHistory == NULL) {
         return;
     }
 
@@ -96,6 +113,7 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     SDL_Color borderColor = {255, 255, 255, 255};
     SDL_Color scoreLineColor = {0, 255, 0, 255};      // Green for scores
     SDL_Color genLineColor = {255, 165, 0, 255};      // Orange for generations
+    SDL_Color mutationLineColor = {255, 100, 255, 255}; // Magenta for mutation
     SDL_Color gridColor = {100, 100, 100, 100};
 
     // Draw background
@@ -110,12 +128,17 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     // Find maximum values for scaling
     int maxScore = 1;
     int maxGeneration = 1;
+    float maxMutation = 0.01f; // Start with a reasonable minimum
+
     for (int i = 0; i < graph->historyCount; i++) {
         if (graph->scoreHistory[i] > maxScore) {
             maxScore = graph->scoreHistory[i];
         }
         if (graph->maxGenerationHistory[i] > maxGeneration) {
             maxGeneration = graph->maxGenerationHistory[i];
+        }
+        if (graph->mutationHistory[i] > maxMutation) {
+            maxMutation = graph->mutationHistory[i];
         }
     }
 
@@ -148,6 +171,17 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
         SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
 
-    // Legend
-    stringRGBA(renderer, x + 5, y + height + 5, "Green: Score | Orange: Max Child Generation", 200, 200, 200, 255);
+    // Draw mutation evolution curve (magenta)
+    SDL_SetRenderDrawColor(renderer, mutationLineColor.r, mutationLineColor.g, mutationLineColor.b, mutationLineColor.a);
+    for (int i = 1; i < graph->historyCount; i++) {
+        int x1 = x + ((i - 1) * width) / (graph->historyCount - 1);
+        int y1 = y + height - (int)((graph->mutationHistory[i - 1] * height) / maxMutation);
+        int x2 = x + (i * width) / (graph->historyCount - 1);
+        int y2 = y + height - (int)((graph->mutationHistory[i] * height) / maxMutation);
+
+        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+    }
+
+    // Clean legend
+    stringRGBA(renderer, x + 5, y + height + 5, "Green: Score | Orange: Max Generation | Magenta: Mutation", 200, 200, 200, 255);
 }

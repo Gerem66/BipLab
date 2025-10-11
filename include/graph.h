@@ -16,6 +16,7 @@ typedef struct Map Map;
 typedef struct {
     int *scoreHistory;              // Score history over time
     int *maxGenerationHistory;      // Max child generation history over time
+    float *mutationHistory;         // Mutation intensity history over time (rate * prob)
     int historyCount;               // Number of data points
     int lastUpdateFrame;            // Frame of last graph update
 } GraphData;
