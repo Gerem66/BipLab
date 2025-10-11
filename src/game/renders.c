@@ -144,6 +144,24 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "Best score: %d (max: %d)", map->cells[map->currentBestCellIndex]->score, map->maxScore);
     stringRGBA(map->renderer, 500, 75, message, color.r, color.g, color.b, color.a);
 
+    // Evolution info (improved display)
+    sprintf(message, "Mutation Rate: %.3f (child: %.3f) | Diversity: %.3f", map->mutationParams.resetMutationRate, map->mutationParams.childMutationRate, map->evolutionMetrics.diversityIndex);
+    stringRGBA(map->renderer, 500, 100, message, color.r, color.g, color.b, color.a);
+
+    // Evolution probability info
+    sprintf(message, "Mutation Prob: %.3f (child: %.3f) | Convergence: %.3f", map->mutationParams.resetMutationProb, map->mutationParams.childMutationProb, map->evolutionMetrics.convergenceRate);
+    stringRGBA(map->renderer, 500, 125, message, color.r, color.g, color.b, color.a);
+
+    // Color-coded stagnation warning
+    SDL_Color stagnationColor = color;
+    if (map->evolutionMetrics.generationsSinceImprovement > 200) {
+        stagnationColor = (SDL_Color){255, 100, 100, 255}; // Red for emergency
+    } else if (map->evolutionMetrics.generationsSinceImprovement > 100) {
+        stagnationColor = (SDL_Color){255, 200, 100, 255}; // Orange for warning
+    }
+    sprintf(message, "Stagnation: %d gen | AvgImpr: %.4f", map->evolutionMetrics.generationsSinceImprovement, map->evolutionMetrics.avgScoreImprovement);
+    stringRGBA(map->renderer, 500, 150, message, stagnationColor.r, stagnationColor.g, stagnationColor.b, stagnationColor.a);
+
     //
     // Optional player info
     //

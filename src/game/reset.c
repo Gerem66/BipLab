@@ -53,6 +53,10 @@ void Game_reset(Map *map, bool fullReset)
 
         // Add point to graph for this generation
         Graph_AddPoint(&map->graphData, map);
+
+        // Update evolution metrics and adapt mutation parameters
+        Evolution_CalculateMetrics(map, &map->evolutionMetrics);
+        Evolution_AdaptMutationParams(&map->evolutionMetrics, &map->mutationParams);
     }
 
     // Reset & mutate cells using selected parents
@@ -93,10 +97,12 @@ void Game_reset(Map *map, bool fullReset)
         Cell_reset(map->cells[targetIndex]);
         freeNeuralNetwork(map->cells[targetIndex]->nn);
         map->cells[targetIndex]->nn = newNN;
+
+        // Use dynamic mutation parameters
         Cell_mutate(
             map->cells[targetIndex],
-            NEURAL_NETWORK_RESET_MUTATION_RATE,
-            NEURAL_NETWORK_RESET_MUTATION_PROB
+            map->mutationParams.resetMutationRate,
+            map->mutationParams.resetMutationProb
         );
 
         revived++;

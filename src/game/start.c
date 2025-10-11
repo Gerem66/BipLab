@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>  // For getcwd()
 #include <stdlib.h>  // For malloc/free
+#include <string.h>   // For memset
 
 bool Game_start(SDL_Renderer *renderer, int w, int h)
 {
@@ -50,6 +51,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
         fprintf(stderr, "Failed to initialize graph system!\n");
         return false;
     }
+
+    // Initialize evolution system
+    Evolution_InitMutationParams(&map.mutationParams);
+    memset(&map.evolutionMetrics, 0, sizeof(EvolutionMetrics));
 
     // Initialize walls
     for (int i = 0; i < GAME_START_WALL_COUNT; ++i)

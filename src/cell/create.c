@@ -103,7 +103,9 @@ void Cell_GiveBirth(Cell *cell, Map *map)
 
     freeNeuralNetwork(newCell->nn);
     newCell->nn = newNN;
-    Cell_mutate(newCell, NEURAL_NETWORK_CHILD_MUTATION_RATE, NEURAL_NETWORK_CHILD_MUTATION_PROB);
+
+    // Use dynamic mutation parameters
+    Cell_mutate(newCell, map->mutationParams.childMutationRate, map->mutationParams.childMutationProb);
 
     if (map->cells[index] != NULL)
         Cell_destroy(map->cells[index]);

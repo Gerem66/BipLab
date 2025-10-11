@@ -18,7 +18,7 @@ typedef struct Map Map;
 #include "checkpoint.h"
 #include "neuralNetwork.h"
 #include "graph.h"
-
+#include "evolution.h"
 
 struct Map
 {
@@ -66,6 +66,10 @@ struct Map
 
     // Graph system
     GraphData graphData;
+
+    // Evolution system
+    EvolutionMetrics evolutionMetrics;
+    DynamicMutationParams mutationParams;
 };
 
 
