@@ -68,9 +68,9 @@ void Game_events(Map *map, SDL_Event *event)
                 if (SDL_GetModState() & KMOD_SHIFT) {
                     // Maj+G: Open/close graph in separate window
                     if (map->graphWindowOpen) {
-                        Game_DestroyGraphWindow(map);
+                        GraphWindow_Destroy(map);
                     } else {
-                        Game_CreateGraphWindow(map);
+                        GraphWindow_Create(map);
                     }
                 } else {
                     // G: Toggle graph in main window

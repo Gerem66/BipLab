@@ -33,6 +33,4 @@ void mutate_NeuralNetwork_Topology(NeuralNetwork *nn, int maxNeurons, int maxLay
 void setRandomWeights(NeuralNetwork *nn, double minValue, double maxValue);
 void freeNeuralNetwork(NeuralNetwork *nn);
 
-void NeuralNetwork_Render(Cell *cell, SDL_Renderer *renderer, int index, int x, int y, int w, int h);
-
 #endif // NEURALNETWORK_H

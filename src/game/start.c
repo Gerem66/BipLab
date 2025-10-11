@@ -251,7 +251,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
             Game_render(renderer, &map);
 
             // Render graph window if open
-            Game_RenderGraphWindow(&map);
+            GraphWindow_Render(&map);
 
             lastRenderTime = currentTime;
 
@@ -296,7 +296,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Clean up graph window
-    Game_DestroyGraphWindow(&map);
+    GraphWindow_Destroy(&map);
 
     // Free graph system
     Graph_Free(&map.graphData);

@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "graph.h"
-#include "game.h"
+#include "../../include/graph.h"
+#include "../../include/game.h"
 
 bool Graph_Init(GraphData *graph) {
     if (graph == NULL) return false;

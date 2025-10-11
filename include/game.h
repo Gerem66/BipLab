@@ -19,6 +19,7 @@ typedef struct Map Map;
 #include "neuralNetwork.h"
 #include "graph.h"
 #include "evolution.h"
+#include "graph/graphWindow.h"
 
 struct Map
 {
@@ -85,10 +86,6 @@ void Game_reset(Map *map, bool fullReset);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
 void Render_ZoomBar(Map *map, SDL_Color color, int x, int y);
-
-bool Game_CreateGraphWindow(Map *map);
-void Game_DestroyGraphWindow(Map *map);
-void Game_RenderGraphWindow(Map *map);
 
 bool Game_exists(char *filename);
 bool Game_save(Map *map, char *filename);
