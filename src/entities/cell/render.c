@@ -1,5 +1,6 @@
 #include "../../../include/entities/cell.h"
 #include "../../../include/system/embedded_resources.h"
+#include "../../../include/ui/ui_utils.h"
 
 // Global sprite structure to hold different cell part textures
 typedef struct {

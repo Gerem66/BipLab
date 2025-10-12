@@ -21,8 +21,6 @@
 
 #define COLOR_BREAKUP(COLOR)    COLOR.r, COLOR.g, COLOR.b, COLOR.a
 
-#define PI 3.14159265358979323846
-
 
 extern const SDL_Color COLOR_TRANSPARENT;
 extern const SDL_Color COLOR_BLACK;
@@ -46,10 +44,5 @@ void Utils_randInit(void);
 float Utils_map(float value, float min1, float max1, float min2, float max2);
 int irand(int min, int max);
 double drand(double min, double max);
-
-void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius);
-void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle);
-void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius);
-void SDL_RenderDrawCircleOutline(SDL_Renderer *renderer, int x, int y, int radius);
 
 #endif // UTILS_H

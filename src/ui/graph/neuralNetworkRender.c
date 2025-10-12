@@ -1,6 +1,7 @@
 #include "../../../include/ui/graph/neuralNetworkRender.h"
 #include "../../../include/ai/neuralNetwork.h"
 #include "../../../include/core/utils.h"
+#include "../../../include/ui/ui_utils.h"
 
 #include <SDL2/SDL2_gfxPrimitives.h>
 

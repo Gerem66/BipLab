@@ -64,3 +64,63 @@ void DrawSmoothRoundedRect(SDL_Renderer *renderer, int x, int y, int w, int h, i
         }
     }
 }
+
+// Draw a filled circle on the renderer
+// https://gist.github.com/henkman/1b6f4492b82dc76adad1dc110c923baa
+void SDL_RenderFillCircle(SDL_Renderer* rend, int x0, int y0, int radius)
+{
+    // Uses the midpoint circle algorithm to draw a filled circle
+    // https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
+    int x = radius;
+    int y = 0;
+    int radiusError = 1 - x;
+    while (x >= y) {
+        SDL_RenderDrawLine(rend, x + x0, y + y0, -x + x0, y + y0);
+        SDL_RenderDrawLine(rend, y + x0, x + y0, -y + x0, x + y0);
+        SDL_RenderDrawLine(rend, -x + x0, -y + y0, x + x0, -y + y0);
+        SDL_RenderDrawLine(rend, -y + x0, -x + y0, y + x0, -x + y0);
+        y++;
+        if (radiusError < 0)
+            radiusError += 2 * y + 1;
+        else {
+            x--;
+            radiusError += 2 * (y - x + 1);
+        }
+    }
+}
+
+// By ChatGPT
+void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int startAngle, int endAngle) {
+    // Convert angles to radians
+    double startRad = startAngle * (PI / 180.0);
+    double endRad = endAngle * (PI / 180.0);
+
+    // Calculate step angle for each iteration
+    double step = PI / (2.0 * radius); // The larger the radius, the smaller the step can be
+
+    // Draw arc point by point
+    for (double theta = startRad; theta < endRad; theta += step) {
+        int x = x0 + radius * cos(theta);
+        int y = y0 + radius * sin(theta);
+
+        SDL_RenderDrawPoint(rend, x, y);
+    }
+}
+
+// By ChatGPT
+void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius) {
+    for (int w = 0; w < radius * 2; w++) {
+        for (int h = 0; h < radius * 2; h++) {
+            int dx = radius - w;
+            int dy = radius - h;
+            if ((dx*dx + dy*dy) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, x + dx, y + dy);
+            }
+        }
+    }
+}
+
+void SDL_RenderDrawCircleOutline(SDL_Renderer *renderer, int x, int y, int radius) {
+    SDL_RenderDrawArc(renderer, x, y, radius, 0, 360);
+    SDL_RenderDrawArc(renderer, x, y, radius - 1, 0, 360);
+}
