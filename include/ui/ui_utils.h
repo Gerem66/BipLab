@@ -10,7 +10,7 @@
  * Draw a smooth antialiased rounded rectangle
  * @param renderer SDL renderer
  * @param x X coordinate
- * @param y Y coordinate  
+ * @param y Y coordinate
  * @param w Width
  * @param h Height
  * @param radius Corner radius

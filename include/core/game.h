@@ -20,6 +20,8 @@ typedef struct Map Map;
 #include "../ui/graph/graphEvolution.h"
 #include "../ai/evolution.h"
 #include "../ui/graph/graphEvolutionWindow.h"
+#include "../ui/interfaces/gameInterface.h"
+#include "../ui/interfaces/trainingInterface.h"
 
 struct Map
 {
@@ -88,12 +90,6 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h);
 void Game_events(Map *map, SDL_Event *event);
 void Game_update(Map *map);
 void Game_reset(Map *map, bool fullReset);
-void Game_render(SDL_Renderer *renderer, Map *map);
-void Render_Text(Map *map, SDL_Color color);
-void Render_ZoomBar(Map *map, SDL_Color color, int x, int y);
-void Render_TrainingDashboard(SDL_Renderer *renderer, Map *map);
-void Render_TrainingMetrics(SDL_Renderer *renderer, Map *map, int x, int y, bool updateData);
-void Render_TrainingGraphs(SDL_Renderer *renderer, Map *map, int x, int y);
 void Game_ResizeWindow(Map *map, int width, int height);
 
 bool Game_exists(char *filename);

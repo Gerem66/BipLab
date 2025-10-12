@@ -21,6 +21,10 @@
 
 #define COLOR_BREAKUP(COLOR)    COLOR.r, COLOR.g, COLOR.b, COLOR.a
 
+#ifndef PI
+#define PI 3.14159265358979323846
+#endif
+
 
 extern const SDL_Color COLOR_TRANSPARENT;
 extern const SDL_Color COLOR_BLACK;

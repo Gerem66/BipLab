@@ -237,7 +237,7 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
 
         // Render if needed
         if (shouldRender) {
-            Game_render(renderer, &map);
+            GameInterface_Render(renderer, &map);
 
             // Render graph window if open
             GraphWindow_Render(&map);

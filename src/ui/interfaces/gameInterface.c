@@ -1,11 +1,20 @@
-#include "../../../include/core/game.h"
+#include "../../../include/ui/interfaces/gameInterface.h"
+#include "../../../include/core/utils.h"
 #include "../../../include/ui/graph/neuralNetworkRender.h"
+#include "../../../include/ui/graph/graphEvolution.h"
+#include "../../../include/entities/food.h"
+#include "../../../include/entities/wall.h"
+#include "../../../include/entities/cell.h"
+#include "../../../include/ui/interfaces/trainingInterface.h"
+#include <SDL2/SDL2_gfxPrimitives.h>
+#include <math.h>
+#include <time.h>
 
-void Game_render(SDL_Renderer *renderer, Map *map)
+void GameInterface_Render(SDL_Renderer *renderer, Map *map)
 {
     // Use training dashboard if training mode is enabled
     if (map->trainingMode) {
-        Render_TrainingDashboard(renderer, map);
+        TrainingInterface_RenderDashboard(renderer, map);
         return;
     }
 
@@ -98,13 +107,13 @@ void Game_render(SDL_Renderer *renderer, Map *map)
 
     // Text information overlay
     if (map->renderText)
-        Render_Text(map, COLOR_LIGHT_GRAY);
+        GameInterface_RenderText(map, COLOR_LIGHT_GRAY);
 
     // Update screen
     SDL_RenderPresent(renderer);
 }
 
-void Render_Text(Map *map, SDL_Color color)
+void GameInterface_RenderText(Map *map, SDL_Color color)
 {
     char message[100];
 
@@ -138,7 +147,7 @@ void Render_Text(Map *map, SDL_Color color)
     // Zoom level indicator (only when zoomed)
     sprintf(message, "Zoom: %.2fx", map->zoomFactor);
     stringRGBA(map->renderer, 100, 125, message, color.r, color.g, color.b, color.a);
-    Render_ZoomBar(map, color, 100, 145);
+    GameInterface_RenderZoomBar(map, color, 100, 145);
 
     //
     // Middle column - Cells info
@@ -241,7 +250,7 @@ void Render_Text(Map *map, SDL_Color color)
     stringRGBA(map->renderer, 850, 325, message, color.r, color.g, color.b, color.a);
 }
 
-void Render_ZoomBar(Map *map, SDL_Color color, int x, int y)
+void GameInterface_RenderZoomBar(Map *map, SDL_Color color, int x, int y)
 {
     // Only show zoom bar when zoomed (not at default 1.0x)
     if (fabs(map->zoomFactor - 1.0f) < 0.01f) {
