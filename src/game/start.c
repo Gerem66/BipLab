@@ -6,7 +6,7 @@
 #include <stdlib.h>  // For malloc/free
 #include <string.h>   // For memset
 
-bool Game_start(SDL_Renderer *renderer, int w, int h)
+bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
 {
     Map map;
     map.width = w;
@@ -33,8 +33,10 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     map.renderEnabled = true;
     map.cellCount = 0;
     map.quit = false;
+
     map.currentBestCellIndex = 1;
     map.renderer = renderer;
+    map.window = window;
 
     // Initialize checkpoint variables
     map.lastCheckpointGeneration = 0;

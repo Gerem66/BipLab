@@ -231,6 +231,14 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
         SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
 
-    // Clean legend
-    stringRGBA(renderer, x + 5, y + height + 5, "Green: Score | Orange: Max Generation | Magenta: Mutation", 200, 200, 200, 255);
+    // Clean legend with colored text (centered)
+    // Calculate approximate text width: "Score | Max Generation | Mutation" ≈ 280 pixels
+    int legendWidth = 280;
+    int legendStartX = x + (width - legendWidth) / 2;
+
+    stringRGBA(renderer, legendStartX, y + height + 5, "Score", 0, 255, 0, 255); // Green
+    stringRGBA(renderer, legendStartX + 40, y + height + 5, " | ", 200, 200, 200, 255); // White separator
+    stringRGBA(renderer, legendStartX + 65, y + height + 5, "Max Generation", 255, 165, 0, 255); // Orange
+    stringRGBA(renderer, legendStartX + 175, y + height + 5, " | ", 200, 200, 200, 255); // White separator
+    stringRGBA(renderer, legendStartX + 200, y + height + 5, "Mutation", 255, 100, 255, 255); // Magenta
 }

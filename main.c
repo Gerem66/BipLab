@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
             // Start the game
-            Game_start(renderer, GAME_WIDTH, GAME_HEIGHT);
+            Game_start(window, renderer, GAME_WIDTH, GAME_HEIGHT);
 
             // Destroy renderer
             SDL_DestroyRenderer(renderer);

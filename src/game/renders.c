@@ -143,7 +143,7 @@ void Render_Text(Map *map, SDL_Color color)
     stringRGBA(map->renderer, 500, 25, message, color.r, color.g, color.b, color.a);
 
     // Cells count
-    sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount - 1);
+    sprintf(message, "Cells count: %d (total: %d)", aliveCount, map->cellCount);
     stringRGBA(map->renderer, 500, 50, message, color.r, color.g, color.b, color.a);
 
     // Best score

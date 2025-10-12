@@ -153,15 +153,16 @@ float Evolution_CalculateDiversity(Map *map)
 
     if (meanScore > 0) {
         // Coefficient of variation method
-        diversityIndex = standardDev / meanScore;
+        float cv = standardDev / meanScore;
+        // Use a sigmoid-like curve for more realistic diversity scaling
+        diversityIndex = cv / (cv + 0.5f); // This will give values between 0 and 1, reaching 0.5 when cv=0.5
     } else if (maxScore > minScore) {
-        // Fallback: normalized range method
-        diversityIndex = (maxScore - minScore) / (maxScore + 1.0f);
+        // Fallback: normalized range method for when mean is 0
+        diversityIndex = (maxScore - minScore) / (maxScore + minScore + 1.0f);
     }
 
-    // Clamp between 0 and 1, with reasonable scaling
-    diversityIndex = fminf(1.0f, diversityIndex * 2.0f); // Scale up for better sensitivity
-    return fmaxf(0.0f, diversityIndex);
+    // Ensure diversity is between 0 and 1
+    return fmaxf(0.0f, fminf(1.0f, diversityIndex));
 }
 
 float Evolution_CalculateConvergenceRate(Map *map)

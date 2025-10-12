@@ -54,6 +54,7 @@ struct Map
     bool quit;
     int currentBestCellIndex;
     SDL_Renderer *renderer;
+    SDL_Window *window;  // Store window for resizing
 
     // Graph window
     bool graphWindowOpen;
@@ -79,13 +80,14 @@ struct Map
 };
 
 
-bool Game_start(SDL_Renderer *renderer, int w, int h);
+bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h);
 void Game_events(Map *map, SDL_Event *event);
 void Game_update(Map *map);
 void Game_reset(Map *map, bool fullReset);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
 void Render_ZoomBar(Map *map, SDL_Color color, int x, int y);
+void Game_ResizeWindow(Map *map, int width, int height);
 
 bool Game_exists(char *filename);
 bool Game_save(Map *map, char *filename);
