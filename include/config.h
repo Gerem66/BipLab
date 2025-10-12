@@ -56,7 +56,7 @@
 //   - Acceleration: [-1.0, 1.0] (negative = backward, positive = forward)
 //   - Rotation: [-1.0, 1.0] (negative = left, positive = right)
 //   - Reproduce: [0.0, 1.0] with threshold at 0.5
-#define NEURAL_NETWORK_TOPOLOGY { 44, 128, 128, 128, 3 }
+#define NEURAL_NETWORK_TOPOLOGY { 30, 32, 32, 32, 3 }
 
 // Percentage of top performers selected as parents for next generation
 #define EVOLUTION_PARENT_SELECTION_RATIO 0.1f
