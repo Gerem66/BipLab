@@ -24,7 +24,7 @@ function(embed_resource target_name input_file output_name)
 endfunction()
 
 # Add all c source files under the src directory
-file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c")
+file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c" "src/*/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Embed resources

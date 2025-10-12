@@ -3,9 +3,9 @@
 
 #include <SDL2/SDL.h>
 
-#include "game.h"
-#include "config.h"
-#include "cell.h"
+#include "core/game.h"
+#include "core/config.h"
+#include "entities/cell.h"
 
 int main(int argc, char* argv[])
 {
