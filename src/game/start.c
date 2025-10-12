@@ -1,5 +1,6 @@
 #include "../../include/game.h"
 #include "../../include/cell.h"
+#include "../../include/embedded_resources.h"
 #include <dirent.h>
 #include <sys/types.h>
 #include <unistd.h>  // For getcwd()
@@ -104,28 +105,15 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     SDL_Texture *shinySprite = NULL;
 
     if (CELL_USE_SPRITE) {
-        char normalSpritePath[256];
-        char shinySpritePath[256];
+        EmbeddedResource normalSkin = get_embedded_resource(RES_SKIN_NORMAL);
+        normalSprite = load_texture_from_embedded_data(renderer, normalSkin.data, normalSkin.size);
 
-        snprintf(normalSpritePath, sizeof(normalSpritePath), "../ressources/bipboup/normal/skin.png");
-        snprintf(shinySpritePath, sizeof(shinySpritePath), "../ressources/bipboup/shiny/skin.png");
+        EmbeddedResource shinySkin = get_embedded_resource(RES_SKIN_SHINY);
+        shinySprite = load_texture_from_embedded_data(renderer, shinySkin.data, shinySkin.size);
 
-        // Load normal sprite once
-        printf("Loading normal sprite: %s\n", normalSpritePath);
-        normalSprite = IMG_LoadTexture(renderer, normalSpritePath);
-        if (normalSprite == NULL) {
-            printf("Failed to load normal sprite: %s\n", IMG_GetError());
-        } else {
-            printf("Successfully loaded normal sprite\n");
-        }
-
-        // Load shiny sprite once
-        printf("Loading shiny sprite: %s\n", shinySpritePath);
-        shinySprite = IMG_LoadTexture(renderer, shinySpritePath);
-        if (shinySprite == NULL) {
-            printf("Failed to load shiny sprite: %s\n", IMG_GetError());
-        } else {
-            printf("Successfully loaded shiny sprite\n");
+        if (!normalSprite || !shinySprite) {
+            printf("Failed to load sprites from embedded data: %s\n", SDL_GetError());
+            return false;
         }
     }
 

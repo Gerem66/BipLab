@@ -8,9 +8,34 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/sdl2)
 
 find_package(OpenMP QUIET)
 
+# Function to embed binary files as C symbols
+function(embed_resource target_name input_file output_name)
+    get_filename_component(input_filename ${input_file} NAME)
+    set(output_file "${CMAKE_CURRENT_BINARY_DIR}/${output_name}.o")
+
+    add_custom_command(
+        OUTPUT ${output_file}
+        COMMAND ${CMAKE_LINKER} -r -b binary -o ${output_file} ${input_file}
+        DEPENDS ${input_file}
+        COMMENT "Embedding ${input_filename}"
+    )
+
+    target_sources(${target_name} PRIVATE ${output_file})
+endfunction()
+
 # Add all c source files under the src directory
 file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# Embed resources
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/skin.png" "skin_normal")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/eyes.png" "eyes_normal")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/leaf.png" "leaf_normal")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/ass.png" "ass_normal")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/shiny/skin.png" "skin_shiny")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/shiny/eyes.png" "eyes_shiny")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/shiny/leaf.png" "leaf_shiny")
+embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/shiny/ass.png" "ass_shiny")
 
 # Add all headers files under the include directory
 target_include_directories(${PROJECT_NAME} PRIVATE include)
