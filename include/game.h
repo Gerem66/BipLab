@@ -17,7 +17,7 @@ typedef struct Map Map;
 #include "popup.h"
 #include "checkpoint.h"
 #include "neuralNetwork.h"
-#include "graph.h"
+#include "graph/graph.h"
 #include "evolution.h"
 #include "graph/graphWindow.h"
 
@@ -34,9 +34,9 @@ struct Map
     time_t startTime;
     time_t pausedTime;
 
-    Cell *cells[CELL_COUNT];
-    Food *foods[FOOD_COUNT];
-    Wall *walls[WALL_COUNT];
+    Cell *cells[MEM_CELL_COUNT];
+    Food *foods[MEM_FOOD_COUNT];
+    Wall *walls[MEM_WALL_COUNT];
     Cell *bestCellEver;
     int cellCount;
     int generation;

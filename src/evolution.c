@@ -3,24 +3,24 @@
 #include <math.h>
 #include <float.h>
 
-// Improvement history size (in generations) to consider for average improvement
-#define IMPROVEMENT_HISTORY_SIZE 10
-// 5% improvement required to consider it "significant"
-// Ex: score 100 -> 105 = 5% improvement
-// Used to detect real progress vs random fluctuations
-#define SIGNIFICANT_IMPROVEMENT_THRESHOLD 0.05f
-#define MIN_MUTATION_RATE 0.01f
-#define MAX_MUTATION_RATE 1.0f   // Increased for extreme stagnation cases
-#define MIN_MUTATION_PROB 0.01f
-#define MAX_MUTATION_PROB 0.8f   // Increased for extreme stagnation cases
+// Get mutation bounds from config
+static const float MUTATION_RATE_BOUNDS_ARRAY[] = MUTATION_RATE_BOUNDS;
+static const float MUTATION_PROB_BOUNDS_ARRAY[] = MUTATION_PROB_BOUNDS;
+static const float CHILD_MUTATION_RATE_BOUNDS_ARRAY[] = CHILD_MUTATION_RATE_BOUNDS;
+static const float CHILD_MUTATION_PROB_BOUNDS_ARRAY[] = CHILD_MUTATION_PROB_BOUNDS;
+
+#define MIN_MUTATION_RATE  MUTATION_RATE_BOUNDS_ARRAY[0]
+#define MAX_MUTATION_RATE  MUTATION_RATE_BOUNDS_ARRAY[2]
+#define MIN_MUTATION_PROB  MUTATION_PROB_BOUNDS_ARRAY[0]
+#define MAX_MUTATION_PROB  MUTATION_PROB_BOUNDS_ARRAY[2]
 
 void Evolution_InitMutationParams(DynamicMutationParams *params)
 {
-    // Initialize with default config values
-    params->resetMutationRate = NEURAL_NETWORK_RESET_MUTATION_RATE;
-    params->resetMutationProb = NEURAL_NETWORK_RESET_MUTATION_PROB;
-    params->childMutationRate = NEURAL_NETWORK_CHILD_MUTATION_RATE;
-    params->childMutationProb = NEURAL_NETWORK_CHILD_MUTATION_PROB;
+    // Initialize with default config values from bounds arrays [min, default, max]
+    params->resetMutationRate = MUTATION_RATE_BOUNDS_ARRAY[1];  // default value
+    params->resetMutationProb = MUTATION_PROB_BOUNDS_ARRAY[1];  // default value
+    params->childMutationRate = CHILD_MUTATION_RATE_BOUNDS_ARRAY[1];  // default value
+    params->childMutationProb = CHILD_MUTATION_PROB_BOUNDS_ARRAY[1];  // default value
 }
 
 void Evolution_CalculateMetrics(Map *map, EvolutionMetrics *metrics)
@@ -297,13 +297,13 @@ void Evolution_AdaptMutationParams(EvolutionMetrics *metrics, DynamicMutationPar
     }
 
     // Apply adaptation to reset mutations (used between generations)
-    params->resetMutationRate = NEURAL_NETWORK_RESET_MUTATION_RATE * mutationMultiplier;
-    params->resetMutationProb = NEURAL_NETWORK_RESET_MUTATION_PROB * mutationMultiplier;
+    params->resetMutationRate = MUTATION_RATE_BOUNDS_ARRAY[1] * mutationMultiplier;  // default * multiplier
+    params->resetMutationProb = MUTATION_PROB_BOUNDS_ARRAY[1] * mutationMultiplier;  // default * multiplier
 
     // Apply smaller adaptation to child mutations (used during reproduction)
     float childMultiplier = 1.0f + (mutationMultiplier - 1.0f) * 0.6f; // 60% of effect
-    params->childMutationRate = NEURAL_NETWORK_CHILD_MUTATION_RATE * childMultiplier;
-    params->childMutationProb = NEURAL_NETWORK_CHILD_MUTATION_PROB * childMultiplier;
+    params->childMutationRate = CHILD_MUTATION_RATE_BOUNDS_ARRAY[1] * childMultiplier;  // default * multiplier
+    params->childMutationProb = CHILD_MUTATION_PROB_BOUNDS_ARRAY[1] * childMultiplier;  // default * multiplier
 
     // Clamp values to reasonable bounds
     params->resetMutationRate = fmaxf(MIN_MUTATION_RATE,

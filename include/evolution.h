@@ -16,10 +16,10 @@ typedef struct EvolutionMetrics {
 
 // Dynamic mutation parameters
 typedef struct DynamicMutationParams {
-    float resetMutationRate;        // Dynamic version of NEURAL_NETWORK_RESET_MUTATION_RATE
-    float resetMutationProb;        // Dynamic version of NEURAL_NETWORK_RESET_MUTATION_PROB
-    float childMutationRate;        // Dynamic version of NEURAL_NETWORK_CHILD_MUTATION_RATE
-    float childMutationProb;        // Dynamic version of NEURAL_NETWORK_CHILD_MUTATION_PROB
+    float resetMutationRate;
+    float resetMutationProb;
+    float childMutationRate;
+    float childMutationProb;
 } DynamicMutationParams;
 
 // Function declarations

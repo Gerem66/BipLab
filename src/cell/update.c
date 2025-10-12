@@ -27,7 +27,7 @@ void Cell_update(Cell *cell, Map *map)
 
     // Update health
     cell->frame++;
-    if (cell->frame % FRAMES_PER_HEALTH_POINT == 0)
+    if (cell->frame % CELL_HEALTH_DECAY_FRAMES == 0)
     {
         cell->health--;
         if (cell->health <= 0)
@@ -273,5 +273,4 @@ void Cell_update(Cell *cell, Map *map)
 void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability)
 {
     mutate_NeuralNetwork_Weights(cell->nn, mutationRate, mutationProbability);
-    // mutate_NeuralNetwork_Topology(cell->nn, NEURAL_NETWORK_TOPOLOGY_NEURON_SIZE_MAX, NEURAL_NETWORK_TOPOLOGY_LAYER_SIZE_MAX, NEURAL_NETWORK_TOPOLOGY_MUTATION_PROBABILITY);
 }

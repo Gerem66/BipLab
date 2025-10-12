@@ -3,7 +3,7 @@
 
 void Game_reset(Map *map, bool fullReset)
 {
-    Cell *bestParents[CELL_COUNT];
+    Cell *bestParents[MEM_CELL_COUNT];
     int parentCount = 0;
 
     if (fullReset)
@@ -20,7 +20,7 @@ void Game_reset(Map *map, bool fullReset)
             int score;
         } CellScore;
 
-        CellScore cellScores[CELL_COUNT];
+        CellScore cellScores[MEM_CELL_COUNT];
         int validCellCount = 0;
 
         // Collect all valid cells

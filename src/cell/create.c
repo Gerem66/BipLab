@@ -44,8 +44,8 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     Cell_reset(cell);
 
     // Create NeuralNetwork
-    int topologySize = NEURAL_NETWORK_TOPOLOGY_SIZE;
     int topology[] = NEURAL_NETWORK_TOPOLOGY;
+    int topologySize = sizeof(topology) / sizeof(topology[0]);  // Deduce size from array
     cell->nn = createNeuralNetwork(topology, topologySize);
     setRandomWeights(cell->nn, -1, 1);
 
@@ -57,7 +57,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
     // Priorize lower scores
     int index = -1;
     int minValue = -1;
-    for (int i = 1; i < CELL_COUNT; i++)
+    for (int i = 1; i < MEM_CELL_COUNT; i++)
     {
         if (map->cells[i] == NULL || map->cells[i]->isAlive)
             continue;
@@ -69,7 +69,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
         }
     }
 
-    if (index == -1 && map->cellCount < CELL_COUNT)
+    if (index == -1 && map->cellCount < MEM_CELL_COUNT)
     {
         index = map->cellCount++;
     }

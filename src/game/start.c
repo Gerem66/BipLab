@@ -78,7 +78,7 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize foods
-    for (int i = 0; i < FOOD_COUNT; ++i)
+    for (int i = 0; i < MEM_FOOD_COUNT; ++i)
     {
         if (i > GAME_START_FOOD_COUNT)
         {
@@ -128,12 +128,12 @@ bool Game_start(SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize cells
-    if (GAME_START_CELL_COUNT <= 0 || GAME_START_CELL_COUNT > CELL_COUNT)
+    if (GAME_START_CELL_COUNT <= 0 || GAME_START_CELL_COUNT > MEM_CELL_COUNT)
     {
         fprintf(stderr, "Error while initializing cells !\n");
         return false;
     }
-    for (int i = 0; i < CELL_COUNT; ++i)
+    for (int i = 0; i < MEM_CELL_COUNT; ++i)
     {
         if (i >= GAME_START_CELL_COUNT)
         {

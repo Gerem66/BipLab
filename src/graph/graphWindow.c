@@ -1,5 +1,5 @@
 #include "../../include/graph/graphWindow.h"
-#include "../../include/graph.h"
+#include "../../include/graph/graph.h"
 
 #include <stdio.h>
 

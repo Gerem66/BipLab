@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../../include/graph.h"
+#include "../../include/graph/graph.h"
 #include "../../include/game.h"
 
 bool Graph_Init(GraphData *graph) {
