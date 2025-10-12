@@ -6,7 +6,7 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 
 // Graph configuration
-#define GRAPH_HISTORY_MAX_SIZE 10000    // Maximum number of data points
+#define GRAPH_HISTORY_MAX_SIZE 100000   // Maximum number of data points
 #define GRAPH_TIMEOUT_FRAMES 100000     // Frames after which we force a graph update
 
 // Forward declaration
@@ -17,7 +17,8 @@ typedef struct {
     int *scoreHistory;              // Score history over time
     int *maxGenerationHistory;      // Max child generation history over time
     float *mutationHistory;         // Mutation intensity history over time (rate * prob)
-    int historyCount;               // Number of data points
+    int historyCount;               // Number of data points (max GRAPH_HISTORY_MAX_SIZE)
+    int circularIndex;              // Current write position in circular buffer
     int lastUpdateFrame;            // Frame of last graph update
 } GraphData;
 

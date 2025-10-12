@@ -29,6 +29,7 @@ bool Graph_Init(GraphData *graph) {
     }
 
     graph->historyCount = 0;
+    graph->circularIndex = 0;
     graph->lastUpdateFrame = 0;
 
     return true;
@@ -58,7 +59,6 @@ void Graph_Free(GraphData *graph) {
 
 void Graph_AddPoint(GraphData *graph, Map *map) {
     if (graph == NULL || map == NULL) return;
-    if (graph->historyCount >= GRAPH_HISTORY_MAX_SIZE) return;
 
     // Find best score and max generation among living cells
     int bestScore = 0;
@@ -82,10 +82,19 @@ void Graph_AddPoint(GraphData *graph, Map *map) {
         // Calculate mutation intensity as rate * probability (represents total change potential)
         float mutationIntensity = map->mutationParams.resetMutationRate * map->mutationParams.resetMutationProb;
 
-        graph->scoreHistory[graph->historyCount] = bestScore;
-        graph->maxGenerationHistory[graph->historyCount] = maxGeneration;
-        graph->mutationHistory[graph->historyCount] = mutationIntensity;
-        graph->historyCount++;
+        // Write to circular buffer
+        graph->scoreHistory[graph->circularIndex] = bestScore;
+        graph->maxGenerationHistory[graph->circularIndex] = maxGeneration;
+        graph->mutationHistory[graph->circularIndex] = mutationIntensity;
+
+        // Update circular index
+        graph->circularIndex = (graph->circularIndex + 1) % GRAPH_HISTORY_MAX_SIZE;
+
+        // Update count (max at GRAPH_HISTORY_MAX_SIZE)
+        if (graph->historyCount < GRAPH_HISTORY_MAX_SIZE) {
+            graph->historyCount++;
+        }
+
         graph->lastUpdateFrame = map->frames;
 
         // Update max score if needed
@@ -131,14 +140,24 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     float maxMutation = 0.01f; // Start with a reasonable minimum
 
     for (int i = 0; i < graph->historyCount; i++) {
-        if (graph->scoreHistory[i] > maxScore) {
-            maxScore = graph->scoreHistory[i];
+        // Calculate chronological index (oldest to newest)
+        int idx;
+        if (graph->historyCount < GRAPH_HISTORY_MAX_SIZE) {
+            // Buffer not full yet, simple indexing
+            idx = i;
+        } else {
+            // Buffer is full, start from oldest data point
+            idx = (graph->circularIndex + i) % GRAPH_HISTORY_MAX_SIZE;
         }
-        if (graph->maxGenerationHistory[i] > maxGeneration) {
-            maxGeneration = graph->maxGenerationHistory[i];
+
+        if (graph->scoreHistory[idx] > maxScore) {
+            maxScore = graph->scoreHistory[idx];
         }
-        if (graph->mutationHistory[i] > maxMutation) {
-            maxMutation = graph->mutationHistory[i];
+        if (graph->maxGenerationHistory[idx] > maxGeneration) {
+            maxGeneration = graph->maxGenerationHistory[idx];
+        }
+        if (graph->mutationHistory[idx] > maxMutation) {
+            maxMutation = graph->mutationHistory[idx];
         }
     }
 
@@ -152,10 +171,20 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     // Draw score evolution curve (green)
     SDL_SetRenderDrawColor(renderer, scoreLineColor.r, scoreLineColor.g, scoreLineColor.b, scoreLineColor.a);
     for (int i = 1; i < graph->historyCount; i++) {
+        // Get chronological indices
+        int idx1, idx2;
+        if (graph->historyCount < GRAPH_HISTORY_MAX_SIZE) {
+            idx1 = i - 1;
+            idx2 = i;
+        } else {
+            idx1 = (graph->circularIndex + i - 1) % GRAPH_HISTORY_MAX_SIZE;
+            idx2 = (graph->circularIndex + i) % GRAPH_HISTORY_MAX_SIZE;
+        }
+
         int x1 = x + ((i - 1) * width) / (graph->historyCount - 1);
-        int y1 = y + height - (graph->scoreHistory[i - 1] * height) / maxScore;
+        int y1 = y + height - (graph->scoreHistory[idx1] * height) / maxScore;
         int x2 = x + (i * width) / (graph->historyCount - 1);
-        int y2 = y + height - (graph->scoreHistory[i] * height) / maxScore;
+        int y2 = y + height - (graph->scoreHistory[idx2] * height) / maxScore;
 
         SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
@@ -163,10 +192,20 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     // Draw max generation evolution curve (orange)
     SDL_SetRenderDrawColor(renderer, genLineColor.r, genLineColor.g, genLineColor.b, genLineColor.a);
     for (int i = 1; i < graph->historyCount; i++) {
+        // Get chronological indices
+        int idx1, idx2;
+        if (graph->historyCount < GRAPH_HISTORY_MAX_SIZE) {
+            idx1 = i - 1;
+            idx2 = i;
+        } else {
+            idx1 = (graph->circularIndex + i - 1) % GRAPH_HISTORY_MAX_SIZE;
+            idx2 = (graph->circularIndex + i) % GRAPH_HISTORY_MAX_SIZE;
+        }
+
         int x1 = x + ((i - 1) * width) / (graph->historyCount - 1);
-        int y1 = y + height - (graph->maxGenerationHistory[i - 1] * height) / maxGeneration;
+        int y1 = y + height - (graph->maxGenerationHistory[idx1] * height) / maxGeneration;
         int x2 = x + (i * width) / (graph->historyCount - 1);
-        int y2 = y + height - (graph->maxGenerationHistory[i] * height) / maxGeneration;
+        int y2 = y + height - (graph->maxGenerationHistory[idx2] * height) / maxGeneration;
 
         SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
@@ -174,10 +213,20 @@ void Graph_Render(GraphData *graph, SDL_Renderer *renderer, int x, int y, int wi
     // Draw mutation evolution curve (magenta)
     SDL_SetRenderDrawColor(renderer, mutationLineColor.r, mutationLineColor.g, mutationLineColor.b, mutationLineColor.a);
     for (int i = 1; i < graph->historyCount; i++) {
+        // Get chronological indices
+        int idx1, idx2;
+        if (graph->historyCount < GRAPH_HISTORY_MAX_SIZE) {
+            idx1 = i - 1;
+            idx2 = i;
+        } else {
+            idx1 = (graph->circularIndex + i - 1) % GRAPH_HISTORY_MAX_SIZE;
+            idx2 = (graph->circularIndex + i) % GRAPH_HISTORY_MAX_SIZE;
+        }
+
         int x1 = x + ((i - 1) * width) / (graph->historyCount - 1);
-        int y1 = y + height - (int)((graph->mutationHistory[i - 1] * height) / maxMutation);
+        int y1 = y + height - (int)((graph->mutationHistory[idx1] * height) / maxMutation);
         int x2 = x + (i * width) / (graph->historyCount - 1);
-        int y2 = y + height - (int)((graph->mutationHistory[i] * height) / maxMutation);
+        int y2 = y + height - (int)((graph->mutationHistory[idx2] * height) / maxMutation);
 
         SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
     }
