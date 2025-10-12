@@ -1,10 +1,14 @@
 #include "../../../include/core/game.h"
 #include "../../../include/ui/graph/neuralNetworkRender.h"
 
-// TODO: Déplacer ce fichier ou des fonctions dans utils ou render ou ui
-
 void Game_render(SDL_Renderer *renderer, Map *map)
 {
+    // Use training dashboard if training mode is enabled
+    if (map->trainingMode) {
+        Render_TrainingDashboard(renderer, map);
+        return;
+    }
+
     Utils_setBackgroundColor(renderer, COLOR_DARK_GREEN);
 
     // === WORLD RENDERING (with zoom/pan) ===
@@ -227,11 +231,14 @@ void Render_Text(Map *map, SDL_Color color)
     sprintf(message, "C: Save checkpoint manually");
     stringRGBA(map->renderer, 850, 250, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
+    sprintf(message, "M: Toggle training mode (optimized dashboard)");
     stringRGBA(map->renderer, 850, 275, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "Esc: Quit");
+    sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");
     stringRGBA(map->renderer, 850, 300, message, color.r, color.g, color.b, color.a);
+
+    sprintf(message, "Esc: Quit");
+    stringRGBA(map->renderer, 850, 325, message, color.r, color.g, color.b, color.a);
 }
 
 void Render_ZoomBar(Map *map, SDL_Color color, int x, int y)

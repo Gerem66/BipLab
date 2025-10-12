@@ -83,7 +83,7 @@ struct Cell
 };
 
 
-Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI);
+Cell *Cell_create(int x, int y, bool isAI);
 void Cell_update(Cell *cell, Map *map);
 void Cell_mutate(Cell *cell, float mutationRate, float mutationProbability);
 void Cell_GiveBirth(Cell *cell, Map *map);

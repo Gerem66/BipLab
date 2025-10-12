@@ -1,6 +1,6 @@
 #include "../../../include/entities/cell.h"
 
-Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
+Cell *Cell_create(int x, int y, bool isAI)
 {
     Cell *cell = malloc(sizeof(Cell));
     if (cell == NULL)
@@ -25,9 +25,6 @@ Cell *Cell_create(SDL_Texture *sprite, int x, int y, bool isAI)
     cell->hitbox.y = y - cell->radius;
     cell->hitbox.w = cell->radius * 2;
     cell->hitbox.h = cell->radius * 2;
-
-    // Set sprite
-    cell->sprite = sprite;
 
     // Init rays from -PI to PI
     float demiAngle = PI / 4.0f;
@@ -80,15 +77,7 @@ void Cell_GiveBirth(Cell *cell, Map *map)
         return;
     }
 
-    // Load cell sprite if sprite rendering is enabled
-    SDL_Texture *sprite = NULL;
-    if (CELL_USE_SPRITE) {
-        char spritePath[256];
-        snprintf(spritePath, sizeof(spritePath), "ressources/bipboup/normal/skin.png");
-        sprite = IMG_LoadTexture(map->renderer, spritePath);
-    }
-
-    Cell *newCell = Cell_create(sprite, cell->positionInit.x, cell->positionInit.y, true);
+    Cell *newCell = Cell_create(cell->positionInit.x, cell->positionInit.y, true);
     newCell->position.x = cell->position.x;
     newCell->position.y = cell->position.y;
     newCell->generation = cell->generation + 1;

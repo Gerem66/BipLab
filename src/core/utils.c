@@ -3,8 +3,6 @@
 #include <time.h>
 
 
-// TODO: Déplacer dans le render (ui) ou autre
-
 const SDL_Color COLOR_TRANSPARENT   = {0};
 const SDL_Color COLOR_BLACK         = {0, 0, 0, 255};
 const SDL_Color COLOR_WHITE         = {255, 255, 255, 255};
@@ -107,30 +105,4 @@ void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius) {
 void SDL_RenderDrawCircleOutline(SDL_Renderer *renderer, int x, int y, int radius) {
     SDL_RenderDrawArc(renderer, x, y, radius, 0, 360);
     SDL_RenderDrawArc(renderer, x, y, radius - 1, 0, 360);
-}
-
-SDL_Texture *LoadSprite(SDL_Renderer *renderer, const char *file)
-{
-    // Load cell sprite
-    SDL_Surface *surface = IMG_Load(file);
-    if (surface == NULL)
-    {
-        printf("Erreur de chargement de l'image : %s\n", SDL_GetError());
-        return NULL;
-    }
-
-    SDL_Texture *sprite = SDL_CreateTextureFromSurface(renderer, surface);
-    if (sprite == NULL)
-    {
-        printf("Erreur de création de la texture : %s\n", SDL_GetError());
-        return NULL;
-    }
-    SDL_FreeSurface(surface);
-
-    return sprite;
-}
-
-void freeSprite(SDL_Texture *sprite)
-{
-    SDL_DestroyTexture(sprite);
 }

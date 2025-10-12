@@ -77,6 +77,22 @@ void Game_events(Map *map, SDL_Event *event)
                     map->renderScoreGraph = !map->renderScoreGraph;
                 }
                 break;
+            case SDLK_m:
+                // Toggle training mode
+                map->trainingMode = !map->trainingMode;
+                if (map->trainingMode) {
+                    // Save current V-sync state and disable it for maximum performance
+                    map->previousVerticalSyncEnabled = map->verticalSync;
+                    map->verticalSync = false;
+                    // Resize window for training mode
+                    Game_ResizeWindow(map, TRAINING_SCREEN_WIDTH, TRAINING_SCREEN_HEIGHT);
+                } else {
+                    // Restore previous V-sync state
+                    map->verticalSync = map->previousVerticalSyncEnabled;
+                    // Resize window back to normal mode
+                    Game_ResizeWindow(map, SCREEN_WIDTH, SCREEN_HEIGHT);
+                }
+                break;
             default:
                 break;
         }

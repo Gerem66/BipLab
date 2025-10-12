@@ -35,6 +35,9 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     map.cellCount = 0;
     map.quit = false;
 
+    // Initialize training mode
+    map.trainingMode = false;
+    map.previousVerticalSyncEnabled = true;
     map.currentBestCellIndex = 1;
     map.renderer = renderer;
     map.window = window;
@@ -115,6 +118,11 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
             printf("Failed to load sprites from embedded data: %s\n", SDL_GetError());
             return false;
         }
+
+        if (!load_all_cell_sprites(renderer)) {
+            fprintf(stderr, "Failed to load cell sprites!\n");
+            return false;
+        }
     }
 
     // Initialize cells
@@ -132,7 +140,7 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
         }
 
         // Create cell with shared sprite texture (no individual loading)
-        map.cells[i] = Cell_create(normalSprite, map.width / 2, map.height / 2, !CELL_AS_PLAYER || i > 0);
+        map.cells[i] = Cell_create(map.width / 2, map.height / 2, !CELL_AS_PLAYER || i > 0);
         if (map.cells[i] == NULL)
         {
             fprintf(stderr, "Error while initializing cell %d !\n", i);
@@ -145,7 +153,7 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     }
 
     // Initialize best cell ever with shiny sprite
-    map.bestCellEver = Cell_create(shinySprite, map.width / 2, map.height / 2, false);
+    map.bestCellEver = Cell_create(map.width / 2, map.height / 2, false);
 
     // Load a neural network if file exists
     char filename[] = "../ressources/best.nn";
@@ -185,15 +193,6 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     {
         freeNeuralNetwork(nn);
         nn = NULL;
-    }
-
-    // Load cell sprites if sprite rendering is enabled
-    if (CELL_USE_SPRITE) {
-        printf("Attempting to load all cell sprites\n");
-        if (!load_all_cell_sprites(renderer)) {
-            fprintf(stderr, "Failed to load cell sprites!\n");
-            return false;
-        }
     }
 
     // Initialize framerate manager

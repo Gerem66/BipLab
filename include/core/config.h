@@ -56,7 +56,7 @@
 //   - Acceleration: [-1.0, 1.0] (negative = backward, positive = forward)
 //   - Rotation: [-1.0, 1.0] (negative = left, positive = right)
 //   - Reproduce: [0.0, 1.0] with threshold at 0.5
-#define NEURAL_NETWORK_TOPOLOGY { 30, 32, 32, 32, 3 }
+#define NEURAL_NETWORK_TOPOLOGY { 30, 512, 512, 512, 256, 128, 64, 3 }
 
 // Percentage of top performers selected as parents for next generation
 #define EVOLUTION_PARENT_SELECTION_RATIO 0.1f
@@ -80,5 +80,13 @@
 #define CONTROLS_ZOOM_SPEED 0.2
 #define CONTROLS_ZOOM_MIN   1.0f
 #define CONTROLS_ZOOM_MAX   5.0f
+
+// =============================================================================
+// MARK: TRAINING MODE CONFIGURATION
+// =============================================================================
+
+#define TRAINING_SCREEN_WIDTH 800               // Wider screen for training mode
+#define TRAINING_SCREEN_HEIGHT 450              // Less height for training mode
+#define TRAINING_DASHBOARD_UPDATE_INTERVAL 30   // Update dashboard text every N frames (reduce CPU usage)
 
 #endif // CONFIG_H

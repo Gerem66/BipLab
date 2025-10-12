@@ -52,8 +52,4 @@ void SDL_RenderDrawArc(SDL_Renderer* rend, int x0, int y0, int radius, int start
 void SDL_RenderDrawCircle(SDL_Renderer *renderer, int x, int y, int radius);
 void SDL_RenderDrawCircleOutline(SDL_Renderer *renderer, int x, int y, int radius);
 
-// TODO: Unused ?
-SDL_Texture *LoadSprite(SDL_Renderer *renderer, const char *file);
-void freeSprite(SDL_Texture *sprite);
-
 #endif // UTILS_H

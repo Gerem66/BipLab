@@ -51,6 +51,10 @@ struct Map
     bool renderScoreGraph;
     bool renderEnabled;
 
+    // Training mode
+    bool trainingMode;
+    bool previousVerticalSyncEnabled;
+
     bool quit;
     int currentBestCellIndex;
     SDL_Renderer *renderer;
@@ -87,6 +91,9 @@ void Game_reset(Map *map, bool fullReset);
 void Game_render(SDL_Renderer *renderer, Map *map);
 void Render_Text(Map *map, SDL_Color color);
 void Render_ZoomBar(Map *map, SDL_Color color, int x, int y);
+void Render_TrainingDashboard(SDL_Renderer *renderer, Map *map);
+void Render_TrainingMetrics(SDL_Renderer *renderer, Map *map, int x, int y, bool updateData);
+void Render_TrainingGraphs(SDL_Renderer *renderer, Map *map, int x, int y);
 void Game_ResizeWindow(Map *map, int width, int height);
 
 bool Game_exists(char *filename);

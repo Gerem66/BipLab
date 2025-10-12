@@ -1,4 +1,5 @@
 #include "../../../include/entities/cell.h"
+#include "../../../include/system/embedded_resources.h"
 
 // Global sprite structure to hold different cell part textures
 typedef struct {
@@ -54,38 +55,31 @@ bool load_all_cell_sprites(SDL_Renderer *renderer) {
         return false;
     }
 
-    char basePath[256];
-    char fullPath[512];
+    // Load normal sprites from embedded resources
+    EmbeddedResource skinNormal = get_embedded_resource(RES_SKIN_NORMAL);
+    normalSprites->skin = load_texture_from_embedded_data(renderer, skinNormal.data, skinNormal.size);
 
-    // Load normal sprites
-    snprintf(basePath, sizeof(basePath), "../ressources/bipboup/normal/");
+    EmbeddedResource leafNormal = get_embedded_resource(RES_LEAF_NORMAL);
+    normalSprites->leaf = load_texture_from_embedded_data(renderer, leafNormal.data, leafNormal.size);
 
-    snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
-    normalSprites->skin = IMG_LoadTexture(renderer, fullPath);
+    EmbeddedResource assNormal = get_embedded_resource(RES_ASS_NORMAL);
+    normalSprites->ass = load_texture_from_embedded_data(renderer, assNormal.data, assNormal.size);
 
-    snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
-    normalSprites->leaf = IMG_LoadTexture(renderer, fullPath);
+    EmbeddedResource eyesNormal = get_embedded_resource(RES_EYES_NORMAL);
+    normalSprites->eyes = load_texture_from_embedded_data(renderer, eyesNormal.data, eyesNormal.size);
 
-    snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
-    normalSprites->ass = IMG_LoadTexture(renderer, fullPath);
+    // Load shiny sprites from embedded resources
+    EmbeddedResource skinShiny = get_embedded_resource(RES_SKIN_SHINY);
+    shinySprites->skin = load_texture_from_embedded_data(renderer, skinShiny.data, skinShiny.size);
 
-    snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
-    normalSprites->eyes = IMG_LoadTexture(renderer, fullPath);
+    EmbeddedResource leafShiny = get_embedded_resource(RES_LEAF_SHINY);
+    shinySprites->leaf = load_texture_from_embedded_data(renderer, leafShiny.data, leafShiny.size);
 
-    // Load shiny sprites
-    snprintf(basePath, sizeof(basePath), "../ressources/bipboup/shiny/");
+    EmbeddedResource assShiny = get_embedded_resource(RES_ASS_SHINY);
+    shinySprites->ass = load_texture_from_embedded_data(renderer, assShiny.data, assShiny.size);
 
-    snprintf(fullPath, sizeof(fullPath), "%sskin.png", basePath);
-    shinySprites->skin = IMG_LoadTexture(renderer, fullPath);
-
-    snprintf(fullPath, sizeof(fullPath), "%sleaf.png", basePath);
-    shinySprites->leaf = IMG_LoadTexture(renderer, fullPath);
-
-    snprintf(fullPath, sizeof(fullPath), "%sass.png", basePath);
-    shinySprites->ass = IMG_LoadTexture(renderer, fullPath);
-
-    snprintf(fullPath, sizeof(fullPath), "%seyes.png", basePath);
-    shinySprites->eyes = IMG_LoadTexture(renderer, fullPath);
+    EmbeddedResource eyesShiny = get_embedded_resource(RES_EYES_SHINY);
+    shinySprites->eyes = load_texture_from_embedded_data(renderer, eyesShiny.data, eyesShiny.size);
 
     // Verify loading
     if (!normalSprites->skin || !normalSprites->leaf || !normalSprites->ass || !normalSprites->eyes ||
