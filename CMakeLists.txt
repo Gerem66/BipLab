@@ -27,6 +27,11 @@ endfunction()
 file(GLOB SOURCES "main.c" "src/*.c" "src/*/*.c" "src/*/*/*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+# Set output directory for executable to project root
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
 # Embed resources
 embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/skin.png" "skin_normal")
 embed_resource(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ressources/bipboup/normal/eyes.png" "eyes_normal")

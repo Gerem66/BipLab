@@ -42,6 +42,17 @@ brew install gcc cmake sdl2 sdl2_image sdl2_ttf sdl2_net sdl2_mixer sdl2_gfx
 
 ## Compilation
 
+### Build simple depuis la racine
+
+```bash
+make              # Build en mode Debug
+make run          # Build + Exécution
+make release      # Build en mode Release
+make clean        # Nettoyer les fichiers temporaires
+```
+
+### Build manuel (si nécessaire)
+
 1. Créer un dossier build et s'y rendre
 ```bash
 mkdir build ; cd build
@@ -49,13 +60,7 @@ mkdir build ; cd build
 
 2. Compiler le projet
 ```bash
-clear && cmake -DCMAKE_BUILD_TYPE=Debug .. && make && ./CellsEvolution
-```
-
-OR
-
-```
-clear && cmake -DCMAKE_BUILD_TYPE=Release .. && make && ./CellsEvolution
+cmake -DCMAKE_BUILD_TYPE=Debug .. && make
 ```
 
 ## References
