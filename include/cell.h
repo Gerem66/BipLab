@@ -22,15 +22,13 @@ typedef struct Cell Cell;
 #include "wall.h"
 #include "utils.h"
 
-#define NUM_RAYS 7
-#define FEAT_PER_RAY 6
-
 
 typedef enum {
     RAY_OBJECT_NONE = 0,
     RAY_OBJECT_FOOD = 1,
     RAY_OBJECT_CELL = 2,
-    RAY_OBJECT_WALL = 3
+    RAY_OBJECT_WALL = 3,
+    RAY_OBJECT_COUNT  // Automatic count - always keep last
 } RayObjectType;
 
 typedef struct {
@@ -61,7 +59,7 @@ struct Cell
 
     bool isAI;
     NeuralNetwork *nn;
-    double inputs[44]; // 1 health + 1 can_reproduce + 7 rays * 6 features
+    double inputs[30]; // 1 health + 1 can_reproduce + 7 rays * 4 features
     double outputs[3]; // acceleration + rotation + reproduction
 
     SDL_FPoint position;

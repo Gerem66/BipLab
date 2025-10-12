@@ -28,6 +28,7 @@
 // =============================================================================
 
 // Cell
+#define CELL_PERCEPTION_RAYS 7
 #define CELL_MAX_HEALTH 100
 #define CELL_START_HEALTH 40
 #define CELL_HEALTH_DECAY_FRAMES 40     // Frames between each health decay
@@ -44,12 +45,12 @@
 // =============================================================================
 
 // Neural network topology:
-// Input layer (44 neurons):
+// Input layer (30 neurons):
 //   - Cell health: 1 input [0.0, 1.0]
 //   - Can reproduce: 1 input [0 or 1]
-//   - Ray sensors: 7 rays × 6 inputs each = 42 inputs
-//     Each ray provides: distance to wall [0.0, 1.0], distance to food [0.0, 1.0],
-//     distance to cell [0.0, 1.0], wall type [0 or 1], food type [0 or 1], cell type [0 or 1]
+//   - Ray sensors: 7 rays × 4 inputs each = 28 inputs
+//     Each ray detects closest object and provides: distance [0.0, 1.0],
+//     object type one-hot encoded: wall [0 or 1], food [0 or 1], cell [0 or 1]
 // Hidden layers: e.g. 128, 128, 128 neurons
 // Output layer (3 neurons):
 //   - Acceleration: [-1.0, 1.0] (negative = backward, positive = forward)

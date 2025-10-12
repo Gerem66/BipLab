@@ -1,22 +1,14 @@
 #include "cell.h"
 
-// === Helper functions for input encoding ===
-enum HitKind { HK_EMPTY=0, HK_FOOD=1, HK_AGENT=2, HK_WALL=3 };
-
-static inline void set_onehot(double* out4, int k){
-    out4[0] = out4[1] = out4[2] = out4[3] = 0.0;
-    if (k >= 0 && k < 4) out4[k] = 1.0;
-}
-
 // Normalize "value" field depending on hit kind:
 // - FOOD:   value = raw food amount -> normalize by FOOD_ITEM_CAPACITY
 // - AGENT:  value = raw health -> normalize by agentMaxEnergy
 // - others: 0
-static inline double norm_value_for(const RayHit* h, double agentMaxEnergy, double foodMaxValue){
-    switch ((int)h->type){
-        case HK_FOOD:  return CLAMP01(h->value / foodMaxValue);
-        case HK_AGENT: return CLAMP01(h->value / agentMaxEnergy);
-        default:       return 0.0;
+static inline double norm_value_for(const RayHit* h){
+    switch (h->type){
+        case RAY_OBJECT_FOOD:   return CLAMP01(h->value / FOOD_ITEM_CAPACITY);
+        case RAY_OBJECT_CELL:   return CLAMP01(h->value / CELL_MAX_HEALTH);
+        default:                return 0.0;
     }
 }
 
@@ -34,8 +26,8 @@ void Cell_update(Cell *cell, Map *map)
             cell->isAlive = false;
     }
 
-    // === Input encoding: health + reproduction_possible + 7 rays with 6 features each ===
-    // Ray features: [distance_norm, state_norm, onehot_empty, onehot_food, onehot_agent, onehot_wall]
+    // === Input encoding: health + reproduction_possible + 7 rays with 4 features each ===
+    // Ray features: [distance_norm, food_value_norm, cell_health_norm, is_wall]
 
     // Input 0: normalized health
     cell->inputs[0] = CLAMP01((double)cell->health / (double)cell->healthMax);
@@ -44,27 +36,22 @@ void Cell_update(Cell *cell, Map *map)
     cell->inputs[1] = (cell->health > CELL_BIRTH_MIN_HEALTH) ? 1.0 : 0.0;
 
     int idx = 2; // start after health and reproduction_possible
-    for (int i = 0; i < NUM_RAYS; ++i){
+    for (int i = 0; i < CELL_PERCEPTION_RAYS; ++i){
         const Ray* r = &cell->rays[i];
 
         bool hasHit = (r->hit.distance >= 0.0) && (r->hit.distance < r->distanceMax);
 
-        int kind = hasHit ? (int)r->hit.type : HK_EMPTY;
-        if (kind < 0 || kind > HK_WALL) kind = HK_EMPTY;
+        RayObjectType objType = hasHit ? r->hit.type : RAY_OBJECT_NONE;
 
         // Distance normalized (1.0 if no hit)
         double dist_norm = hasHit ? CLAMP01(r->hit.distance / (r->distanceMax > 0.0 ? r->distanceMax : 1.0)) : 1.0;
         cell->inputs[idx++] = dist_norm;
 
-        // State value normalized by object type
-        double state_norm = hasHit ? norm_value_for(&r->hit, (double)cell->healthMax, (double)FOOD_ITEM_CAPACITY) : 0.0;
-        cell->inputs[idx++] = state_norm;
-
-        // One-hot encoding for object type
-        set_onehot(&cell->inputs[idx], kind);
-        idx += 4;
+        // Value-based encoding for each object type
+        cell->inputs[idx++] = (objType == RAY_OBJECT_FOOD) ? norm_value_for(&r->hit) : 0.0;
+        cell->inputs[idx++] = (objType == RAY_OBJECT_CELL) ? norm_value_for(&r->hit) : 0.0;
+        cell->inputs[idx++] = (objType == RAY_OBJECT_WALL) ? 1.0 : 0.0;
     }
-    // Total inputs: 1 health + 1 reproduction_possible + NUM_RAYS * FEAT_PER_RAY = 44
 
     // Process neural network
     if (cell->isAI)

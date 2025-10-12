@@ -4,12 +4,25 @@
 #include <SDL2/SDL.h>
 
 #include "game.h"
+#include "config.h"
+#include "cell.h"
 
 int main(int argc, char* argv[])
 {
     // Unused argc, argv
     (void) argc;
     (void) argv;
+
+    // Verify neural network topology consistency
+    int topology[] = NEURAL_NETWORK_TOPOLOGY;
+    int expected_inputs = CELL_PERCEPTION_RAYS * RAY_OBJECT_COUNT + 2; // rays * types + health + can_reproduce
+
+    if (topology[0] != expected_inputs) {
+        fprintf(stderr, "ERROR: Neural network topology mismatch!\n");
+        fprintf(stderr, "Expected: %d * %d + 2 = %d inputs, but got: %d inputs\n",
+                CELL_PERCEPTION_RAYS, RAY_OBJECT_COUNT, expected_inputs, topology[0]);
+        return 1;
+    }
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
