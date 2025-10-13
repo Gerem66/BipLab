@@ -2,6 +2,7 @@
 #include "../../../include/core/utils.h"
 #include "../../../include/ui/ui_utils.h"
 #include "../../../include/ui/graph/graphEvolution.h"
+#include "../../../include/system/performance.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <math.h>
 #include <time.h>
@@ -185,7 +186,11 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
     int barY = y + TRAINING_GRAPH_HEIGHT + 60;
     int barWidth = TRAINING_GRAPH_WIDTH;
     int barHeight = 8; // Very thin modern bars
-    int barSpacing = 40;
+    int barSpacing = 32;
+
+    // Render performance breakdown bar (under metrics)
+    TrainingInterface_RenderPerformanceBar(renderer, x, barY);
+    barY += barSpacing;
 
     // Diversity progress bar
     SDL_Color barBgColor = {35, 35, 40, 255};
@@ -260,4 +265,87 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
 
     sprintf(barText, "Generation Progress: %d/%d (%.1f%%)", aliveCount, GAME_START_CELL_COUNT, progressPercent * 100.0f);
     stringRGBA(renderer, x, barY - 15, barText, 200, 200, 200, 255);
+}
+
+void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y)
+{
+    // Récupérer les statistiques de performance
+    const PerfStats *nnStats = Perf_GetStats(PERF_NEURAL_NETWORK);
+    const PerfStats *cellStats = Perf_GetStats(PERF_CELL_UPDATE);
+    const PerfStats *mutationStats = Perf_GetStats(PERF_MUTATION);
+
+    // Dimensions de la barre
+    int barWidth = TRAINING_GRAPH_WIDTH;
+    int barHeight = 8;
+    int cornerRadius = 4;
+
+    // Calculer les temps totaux
+    double totalNN = (nnStats && nnStats->callCount > 0) ? nnStats->totalTime : 0.0;
+    double totalCell = (cellStats && cellStats->callCount > 0) ? cellStats->totalTime : 0.0;
+    double totalMutation = (mutationStats && mutationStats->callCount > 0) ? mutationStats->totalTime : 0.0;
+    double totalTime = totalNN + totalCell + totalMutation;
+
+    if (totalTime <= 0) {
+        // Pas de données, afficher une barre grise
+        SDL_Color grayColor = {100, 100, 100, 255};
+        DrawSmoothRoundedRect(renderer, x, y, barWidth, barHeight, cornerRadius, grayColor);
+
+        SDL_Color labelColor = {200, 200, 200, 255};
+        stringRGBA(renderer, x, y - barHeight - 8, "No performance data yet...",
+                   labelColor.r, labelColor.g, labelColor.b, labelColor.a);
+        return;
+    }
+
+    // Calculer les proportions
+    double nnProportion = totalNN / totalTime;
+    double cellProportion = totalCell / totalTime;
+    double mutationProportion = totalMutation / totalTime;
+
+    // Couleurs pour chaque type
+    SDL_Color nnColor = {100, 150, 255, 255};      // Bleu pour Neural Network
+    SDL_Color cellColor = {100, 255, 150, 255};     // Vert pour Cell Update  
+    SDL_Color mutationColor = {255, 150, 100, 255}; // Orange pour Mutation
+
+    // Fond noir arrondi
+    SDL_Color bgColor = {35, 35, 40, 255};
+    DrawSmoothRoundedRect(renderer, x, y, barWidth, barHeight, cornerRadius, bgColor);
+
+    // Dessiner les segments proportionnels
+    int currentX = x;
+
+    // Segment Neural Network
+    int nnWidth = (int)(barWidth * nnProportion);
+    if (nnWidth > 0) {
+        // Dessiner avec coins arrondis seulement à gauche si c'est le premier segment
+        DrawSmoothRoundedRect(renderer, currentX, y, nnWidth, barHeight, cornerRadius, nnColor);
+        currentX += nnWidth;
+    }
+
+    // Segment Cell Update
+    int cellWidth = (int)(barWidth * cellProportion);
+    if (cellWidth > 0) {
+        // Rectangle simple au milieu
+        SDL_Rect cellRect = {currentX, y, cellWidth, barHeight};
+        SDL_SetRenderDrawColor(renderer, cellColor.r, cellColor.g, cellColor.b, cellColor.a);
+        DrawSmoothRoundedRect(renderer, cellRect.x, cellRect.y, cellRect.w, cellRect.h, cornerRadius, cellColor);
+        currentX += cellWidth;
+    }
+
+    // Segment Mutation (le reste de la barre)
+    int mutationWidth = (x + barWidth) - currentX;
+    if (mutationWidth > 0) {
+        // Dessiner avec coins arrondis seulement à droite si c'est le dernier segment
+        DrawSmoothRoundedRect(renderer, currentX, y, mutationWidth, barHeight, cornerRadius, mutationColor);
+    }
+
+    // Légendes sous la barre
+    SDL_Color textColor = {255, 255, 255, 200};
+    int legendY = y - barHeight - 8;
+
+    char legendText[200];
+    sprintf(legendText, "NN: %.1f%% | Cells: %.1f%% | Mutation: %.1f%%",
+            nnProportion * 100.0,
+            cellProportion * 100.0,
+            mutationProportion * 100.0);
+    stringRGBA(renderer, x, legendY, legendText, textColor.r, textColor.g, textColor.b, textColor.a);
 }

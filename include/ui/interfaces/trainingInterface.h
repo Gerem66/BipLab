@@ -30,4 +30,13 @@ void TrainingInterface_RenderMetrics(SDL_Renderer *renderer, Map *map, int x, in
  */
 void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int y);
 
+/**
+ * Render performance breakdown bar
+ * @param renderer SDL renderer
+ * @param map Game map
+ * @param x X position
+ * @param y Y position
+ */
+void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y);
+
 #endif // TRAINING_INTERFACE_H

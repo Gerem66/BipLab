@@ -1,4 +1,5 @@
 #include "../../include/ai/neuralNetwork.h"
+#include "../../include/system/performance.h"
 
 NeuralLayer *createNeuralLayer(int neuronCount, int nextLayerNeuronCount)
 {
@@ -114,53 +115,57 @@ NeuralNetwork *NeuralNetwork_Copy(NeuralNetwork *parent)
 
 void processInputs(NeuralNetwork *nn, double *inputs, double *outputs)
 {
-    double *currentOutputs = inputs;
-    for (int i = 0; i < nn->topologySize - 1; i++)
-    {
-        NeuralLayer *layer = nn->layers[i];
-        for (int j = 0; j < layer->nextLayerNeuronCount; j++)
+    PERF_MEASURE(PERF_NEURAL_NETWORK) {
+        double *currentOutputs = inputs;
+        for (int i = 0; i < nn->topologySize - 1; i++)
         {
-            // Start with the bias
-            layer->outputs[j] = layer->biases[j];
-
-            for (int k = 0; k < layer->neuronCount; k++)
+            NeuralLayer *layer = nn->layers[i];
+            for (int j = 0; j < layer->nextLayerNeuronCount; j++)
             {
-                layer->outputs[j] += currentOutputs[k] * layer->weights[k * layer->nextLayerNeuronCount + j];
+                // Start with the bias
+                layer->outputs[j] = layer->biases[j];
+
+                for (int k = 0; k < layer->neuronCount; k++)
+                {
+                    layer->outputs[j] += currentOutputs[k] * layer->weights[k * layer->nextLayerNeuronCount + j];
+                }
+                layer->outputs[j] = tanh(layer->outputs[j]);
             }
-            layer->outputs[j] = tanh(layer->outputs[j]);
+            currentOutputs = layer->outputs;
         }
-        currentOutputs = layer->outputs;
-    }
-    for (int i = 0; i < nn->layers[nn->topologySize - 2]->nextLayerNeuronCount; i++)
-    {
-        outputs[i] = currentOutputs[i];
-    }
+        for (int i = 0; i < nn->layers[nn->topologySize - 2]->nextLayerNeuronCount; i++)
+        {
+            outputs[i] = currentOutputs[i];
+        }
+    } // PERF_MEASURE
 }
 
 void mutate_NeuralNetwork_Weights(NeuralNetwork *nn, double mutationRate, float mutationProbability)
 {
-    for (int i = 0; i < nn->topologySize - 1; i++)
-    {
-        NeuralLayer *layer = nn->layers[i];
-
-        // Weight mutation
-        for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++)
+    PERF_MEASURE(PERF_MUTATION) {
+        for (int i = 0; i < nn->topologySize - 1; i++)
         {
-            if (rand() / (double)RAND_MAX < mutationProbability)
+            NeuralLayer *layer = nn->layers[i];
+
+            // Weight mutation
+            for (int j = 0; j < layer->neuronCount * layer->nextLayerNeuronCount; j++)
             {
-                layer->weights[j] += drand(-mutationRate, mutationRate);
+                if (rand() / (double)RAND_MAX < mutationProbability)
+                {
+                    layer->weights[j] += drand(-mutationRate, mutationRate);
+                }
+            }
+
+            // Bias mutation
+            for (int j = 0; j < layer->nextLayerNeuronCount; j++)
+            {
+                if (rand() / (double)RAND_MAX < mutationProbability)
+                {
+                    layer->biases[j] += drand(-mutationRate, mutationRate);
+                }
             }
         }
-
-        // Bias mutation
-        for (int j = 0; j < layer->nextLayerNeuronCount; j++)
-        {
-            if (rand() / (double)RAND_MAX < mutationProbability)
-            {
-                layer->biases[j] += drand(-mutationRate, mutationRate);
-            }
-        }
-    }
+    } // PERF_MEASURE
 }
 
 /**

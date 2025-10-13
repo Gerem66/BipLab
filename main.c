@@ -6,6 +6,7 @@
 #include "core/game.h"
 #include "core/config.h"
 #include "entities/cell.h"
+#include "system/performance.h"
 
 int main(int argc, char* argv[])
 {
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "SDL could not be initialized!\n"
                         "SDL_Error: %s\n", SDL_GetError());
-        return 0;
+        return 1;
     }
 
 #if defined linux && SDL_VERSION_ATLEAST(2, 0, 8)
@@ -37,7 +38,7 @@ int main(int argc, char* argv[])
     if (!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
     {
         printf("SDL can not disable compositor bypass!\n");
-        return 0;
+        return 1;
     }
 #endif
 
@@ -51,30 +52,37 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "Window could not be created!\n"
                         "SDL_Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
     }
-    else
+
+    // Create renderer
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer)
     {
-        // Create renderer
-        SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-        if (!renderer)
-        {
-            fprintf(stderr, "Renderer could not be created!\n"
-                            "SDL_Error: %s\n", SDL_GetError());
-        }
-        else
-        {
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-            // Start the game
-            Game_start(window, renderer, GAME_WIDTH, GAME_HEIGHT);
-
-            // Destroy renderer
-            SDL_DestroyRenderer(renderer);
-        }
-
-        // Destroy window
+        fprintf(stderr, "Renderer could not be created!\n"
+                        "SDL_Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
     }
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // Initialize performance monitoring
+    Perf_Init(false, NULL);
+
+    // Start the game
+    Game_start(window, renderer, GAME_WIDTH, GAME_HEIGHT);
+
+    // Cleanup performance monitoring
+    Perf_Cleanup();
+
+    // Destroy renderer
+    SDL_DestroyRenderer(renderer);
+
+    // Destroy window
+    SDL_DestroyWindow(window);
 
     // Quit SDL
     SDL_Quit();

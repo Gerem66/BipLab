@@ -5,6 +5,7 @@
 #endif
 
 #include "../../../include/core/game.h"
+#include "../../../include/system/performance.h"
 
 void Game_update(Map *map)
 {
@@ -31,7 +32,9 @@ void Game_update(Map *map)
 #endif
     for (int i = 0; i < map->cellCount; ++i) {
         if (map->cells[i] != NULL) {
-            Cell_update(map->cells[i], map);
+            PERF_MEASURE(PERF_CELL_UPDATE) {
+                Cell_update(map->cells[i], map);
+            }
         }
     }
 
