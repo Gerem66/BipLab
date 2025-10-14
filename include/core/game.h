@@ -53,9 +53,8 @@ struct Map
     bool renderScoreGraph;
     bool renderEnabled;
 
-    // Training mode
-    bool trainingMode;
-    bool previousVerticalSyncEnabled;
+    // Screen mode
+    int mode;
 
     bool quit;
     int currentBestCellIndex;

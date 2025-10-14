@@ -1,6 +1,7 @@
 #include "../../../include/core/game.h"
 #include "../../../include/entities/cell.h"
 #include "../../../include/system/embedded_resources.h"
+#include "../../../include/ui/ui.h"
 #include <dirent.h>
 #include <sys/types.h>
 #include <unistd.h>  // For getcwd()
@@ -35,12 +36,14 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     map.cellCount = 0;
     map.quit = false;
 
-    // Initialize training mode
-    map.trainingMode = false;
-    map.previousVerticalSyncEnabled = true;
+    // Initialize default values
+    map.mode = SCREEN_NORMAL;
     map.currentBestCellIndex = 1;
     map.renderer = renderer;
     map.window = window;
+
+    // Apply startup mode
+    Screen_Set(&map, GAME_START_MODE);
 
     // Initialize checkpoint variables
     map.lastCheckpointGeneration = 0;

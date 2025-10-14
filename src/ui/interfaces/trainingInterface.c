@@ -165,11 +165,20 @@ void TrainingInterface_RenderMetrics(SDL_Renderer *renderer, Map *map, int x, in
         totalBiases += topology[i];
     }
 
-    sprintf(text, "Layers: %d | Parameters: %d", layerCount, totalWeights + totalBiases);
+    // Format large numbers with k/M suffix
+    sprintf(text, "Architecture: %d layers", layerCount);
     stringRGBA(renderer, x, currentY, text, valueColor.r, valueColor.g, valueColor.b, valueColor.a);
     currentY += lineHeight;
 
-    sprintf(text, "Weights: %d | Biases: %d", totalWeights, totalBiases);
+    // Format large numbers with k/M suffix
+    int totalParams = totalWeights + totalBiases;
+    if (totalParams >= 1000000) {
+        sprintf(text, "Parameters: %.1fM", totalParams / 1000000.0);
+    } else if (totalParams >= 1000) {
+        sprintf(text, "Parameters: %.1fk", totalParams / 1000.0);
+    } else {
+        sprintf(text, "Parameters: %d", totalParams);
+    }
     stringRGBA(renderer, x, currentY, text, valueColor.r, valueColor.g, valueColor.b, valueColor.a);
 }
 
@@ -183,7 +192,7 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
                 graphLabelColor.r, graphLabelColor.g, graphLabelColor.b, graphLabelColor.a);
 
     // Simple progress bars for key metrics
-    int barY = y + TRAINING_GRAPH_HEIGHT + 60;
+    int barY = y + TRAINING_GRAPH_HEIGHT + 50;
     int barWidth = TRAINING_GRAPH_WIDTH;
     int barHeight = 8; // Very thin modern bars
     int barSpacing = 32;
@@ -303,7 +312,7 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
 
     // Couleurs pour chaque type
     SDL_Color nnColor = {100, 150, 255, 255};      // Bleu pour Neural Network
-    SDL_Color cellColor = {100, 255, 150, 255};     // Vert pour Cell Update  
+    SDL_Color cellColor = {100, 255, 150, 255};     // Vert pour Cell Update
     SDL_Color mutationColor = {255, 150, 100, 255}; // Orange pour Mutation
 
     // Fond noir arrondi

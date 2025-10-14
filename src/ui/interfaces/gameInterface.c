@@ -1,4 +1,5 @@
 #include "../../../include/ui/interfaces/gameInterface.h"
+#include "../../../include/ui/ui.h"
 #include "../../../include/core/utils.h"
 #include "../../../include/ui/graph/neuralNetworkRender.h"
 #include "../../../include/ui/graph/graphEvolution.h"
@@ -13,7 +14,7 @@
 void GameInterface_Render(SDL_Renderer *renderer, Map *map)
 {
     // Use training dashboard if training mode is enabled
-    if (map->trainingMode) {
+    if (map->mode == SCREEN_TRAINING) {
         TrainingInterface_RenderDashboard(renderer, map);
         return;
     }

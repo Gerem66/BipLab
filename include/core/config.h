@@ -10,6 +10,7 @@
 #define GAME_WIDTH      1200
 #define GAME_HEIGHT     800
 #define GAME_FPS_LIMIT  60
+#define GAME_START_MODE SCREEN_TRAINING  // SCREEN_TRAINING
 
 // =============================================================================
 // MARK: GAME OBJECTS LIMITS
