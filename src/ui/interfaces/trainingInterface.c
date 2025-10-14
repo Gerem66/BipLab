@@ -1,6 +1,7 @@
 #include "../../../include/ui/interfaces/trainingInterface.h"
 #include "../../../include/core/utils.h"
 #include "../../../include/ui/ui_utils.h"
+#include "../../../include/ui/components/progressbar.h"
 #include "../../../include/ui/graph/graphEvolution.h"
 #include "../../../include/system/performance.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
@@ -194,60 +195,42 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
     // Simple progress bars for key metrics
     int barY = y + TRAINING_GRAPH_HEIGHT + 50;
     int barWidth = TRAINING_GRAPH_WIDTH;
-    int barHeight = 8; // Very thin modern bars
+    int barHeight = 8;
     int barSpacing = 32;
+
+    // Couleurs communes
+    SDL_Color barBgColor = {35, 35, 40, 255};
 
     // Render performance breakdown bar (under metrics)
     TrainingInterface_RenderPerformanceBar(renderer, x, barY);
     barY += barSpacing;
 
     // Diversity progress bar
-    SDL_Color barBgColor = {35, 35, 40, 255};
-    SDL_Color barFgColor = {100, 180, 255, 255};
-    int cornerRadius = 4; // Nice smooth corners for 8px height bars
-
-    // Draw background
-    DrawSmoothRoundedRect(renderer, x, barY, barWidth, barHeight, cornerRadius, barBgColor);
-
-    // Draw foreground
+    SDL_Color diversityFgColor = {100, 180, 255, 255};
     float diversityPercent = map->evolutionMetrics.diversityIndex; // Diversity is already 0-1
-    int fgWidth = (int)(barWidth * diversityPercent);
-    if (fgWidth > 0) {
-        DrawSmoothRoundedRect(renderer, x, barY, fgWidth, barHeight, cornerRadius, barFgColor);
-    }
-
-    char barText[50];
+    
+    char barText[100];
     sprintf(barText, "Diversity: %.3f", map->evolutionMetrics.diversityIndex);
-    stringRGBA(renderer, x, barY - 15, barText, 200, 200, 200, 255);
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+                      diversityPercent, barText, barBgColor, diversityFgColor);
 
     // Best score progress (relative to max ever)
     barY += barSpacing;
 
-    // Draw background
-    DrawSmoothRoundedRect(renderer, x, barY, barWidth, barHeight, cornerRadius, barBgColor);
-
     float scorePercent = (map->maxScore > 0) ?
         (float)map->cells[map->currentBestCellIndex]->score / (float)map->maxScore : 0.0f;
-    // Cap the percentage at 100% to prevent the bar from overflowing
-    scorePercent = fminf(scorePercent, 1.0f);
 
     SDL_Color scoreFgColor = (scorePercent > 0.9f) ? (SDL_Color){100, 255, 100, 255} :
                             (scorePercent > 0.7f) ? (SDL_Color){255, 200, 100, 255} :
                             (SDL_Color){255, 100, 100, 255};
 
-    int scoreFgWidth = (int)(barWidth * scorePercent);
-    if (scoreFgWidth > 0) {
-        DrawSmoothRoundedRect(renderer, x, barY, scoreFgWidth, barHeight, cornerRadius, scoreFgColor);
-    }
-
-    sprintf(barText, "Current best (%d) vs Best (%d): %.1f%%", map->cells[map->currentBestCellIndex]->score, map->maxScore, scorePercent * 100.0f);
-    stringRGBA(renderer, x, barY - 15, barText, 200, 200, 200, 255);
+    sprintf(barText, "Current best (%d) vs Best (%d): %.1f%%", 
+            map->cells[map->currentBestCellIndex]->score, map->maxScore, scorePercent * 100.0f);
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+                      scorePercent, barText, barBgColor, scoreFgColor);
 
     // Generation progress bar (alive cells / total initial cells)
     barY += barSpacing;
-
-    // Draw background
-    DrawSmoothRoundedRect(renderer, x, barY, barWidth, barHeight, cornerRadius, barBgColor);
 
     // Calculate alive count for this bar
     int aliveCount = 0;
@@ -267,13 +250,10 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
                             (progressPercent > 0.2f) ? (SDL_Color){255, 150, 100, 255} :
                             (SDL_Color){100, 150, 255, 255};
 
-    int progressFgWidth = (int)(barWidth * progressPercent);
-    if (progressFgWidth > 0) {
-        DrawSmoothRoundedRect(renderer, x, barY, progressFgWidth, barHeight, cornerRadius, aliveFgColor);
-    }
-
-    sprintf(barText, "Generation Progress: %d/%d (%.1f%%)", aliveCount, GAME_START_CELL_COUNT, progressPercent * 100.0f);
-    stringRGBA(renderer, x, barY - 15, barText, 200, 200, 200, 255);
+    sprintf(barText, "Generation Progress: %d/%d (%.1f%%)", 
+            aliveCount, GAME_START_CELL_COUNT, progressPercent * 100.0f);
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+                      progressPercent, barText, barBgColor, aliveFgColor);
 }
 
 void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y)
@@ -295,13 +275,11 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
     double totalTime = totalNN + totalCell + totalMutation;
 
     if (totalTime <= 0) {
-        // Pas de données, afficher une barre grise
-        SDL_Color grayColor = {100, 100, 100, 255};
-        DrawSmoothRoundedRect(renderer, x, y, barWidth, barHeight, cornerRadius, grayColor);
-
-        SDL_Color labelColor = {200, 200, 200, 255};
-        stringRGBA(renderer, x, y - barHeight - 8, "No performance data yet...",
-                   labelColor.r, labelColor.g, labelColor.b, labelColor.a);
+        // Pas de données, utiliser le composant progressbar
+        SDL_Color grayBg = {35, 35, 40, 255};
+        SDL_Color grayFg = {100, 100, 100, 255};
+        ProgressBar_Render(renderer, x, y, barWidth, barHeight, 0.0f, 
+                          "No performance data yet...", grayBg, grayFg);
         return;
     }
 
@@ -325,7 +303,6 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
     // Segment Neural Network
     int nnWidth = (int)(barWidth * nnProportion);
     if (nnWidth > 0) {
-        // Dessiner avec coins arrondis seulement à gauche si c'est le premier segment
         DrawSmoothRoundedRect(renderer, currentX, y, nnWidth, barHeight, cornerRadius, nnColor);
         currentX += nnWidth;
     }
@@ -333,17 +310,13 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
     // Segment Cell Update
     int cellWidth = (int)(barWidth * cellProportion);
     if (cellWidth > 0) {
-        // Rectangle simple au milieu
-        SDL_Rect cellRect = {currentX, y, cellWidth, barHeight};
-        SDL_SetRenderDrawColor(renderer, cellColor.r, cellColor.g, cellColor.b, cellColor.a);
-        DrawSmoothRoundedRect(renderer, cellRect.x, cellRect.y, cellRect.w, cellRect.h, cornerRadius, cellColor);
+        DrawSmoothRoundedRect(renderer, currentX, y, cellWidth, barHeight, cornerRadius, cellColor);
         currentX += cellWidth;
     }
 
     // Segment Mutation (le reste de la barre)
     int mutationWidth = (x + barWidth) - currentX;
     if (mutationWidth > 0) {
-        // Dessiner avec coins arrondis seulement à droite si c'est le dernier segment
         DrawSmoothRoundedRect(renderer, currentX, y, mutationWidth, barHeight, cornerRadius, mutationColor);
     }
 
