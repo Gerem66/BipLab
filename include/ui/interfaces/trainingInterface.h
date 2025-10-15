@@ -4,6 +4,9 @@
 #include <SDL2/SDL.h>
 #include "../../core/game.h"
 
+#define TRAINING_GRAPH_WIDTH 350
+#define TRAINING_GRAPH_HEIGHT 160
+
 /**
  * Render the training dashboard
  * @param renderer SDL renderer

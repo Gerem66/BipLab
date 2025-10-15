@@ -241,7 +241,7 @@ void GameInterface_RenderText(Map *map, SDL_Color color)
     sprintf(message, "C: Save checkpoint manually");
     stringRGBA(map->renderer, 850, 250, message, color.r, color.g, color.b, color.a);
 
-    sprintf(message, "M: Toggle training mode (optimized dashboard)");
+    sprintf(message, "M: Toggle training mode");
     stringRGBA(map->renderer, 850, 275, message, color.r, color.g, color.b, color.a);
 
     sprintf(message, "Mouse wheel: Zoom/Dezoom & move view");

@@ -7,6 +7,7 @@
 #include "core/config.h"
 #include "entities/cell.h"
 #include "system/performance.h"
+#include "system/hardware_monitor.h"
 
 int main(int argc, char* argv[])
 {
@@ -72,10 +73,14 @@ int main(int argc, char* argv[])
     // Initialize performance monitoring
     Perf_Init(false, NULL);
 
+    // Initialize hardware monitoring
+    HwMonitor_Init();
+
     // Start the game
     Game_start(window, renderer, GAME_WIDTH, GAME_HEIGHT);
 
-    // Cleanup performance monitoring
+    // Cleanup monitoring systems
+    HwMonitor_Cleanup();
     Perf_Cleanup();
 
     // Destroy renderer

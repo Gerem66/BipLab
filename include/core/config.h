@@ -10,7 +10,7 @@
 #define GAME_WIDTH      1200
 #define GAME_HEIGHT     800
 #define GAME_FPS_LIMIT  60
-#define GAME_START_MODE SCREEN_TRAINING  // SCREEN_TRAINING
+#define GAME_START_MODE SCREEN_TRAINING
 
 // =============================================================================
 // MARK: GAME OBJECTS LIMITS
@@ -86,7 +86,7 @@
 // MARK: TRAINING MODE CONFIGURATION
 // =============================================================================
 
-#define TRAINING_SCREEN_WIDTH 800               // Wider screen for training mode
+#define TRAINING_SCREEN_WIDTH 1100              // Much wider screen for 3-column training mode
 #define TRAINING_SCREEN_HEIGHT 450              // Less height for training mode
 #define TRAINING_DASHBOARD_UPDATE_INTERVAL 30   // Update dashboard text every N frames (reduce CPU usage)
 

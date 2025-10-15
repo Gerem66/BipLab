@@ -2,14 +2,12 @@
 #include "../../../include/core/utils.h"
 #include "../../../include/ui/ui_utils.h"
 #include "../../../include/ui/components/progressbar.h"
+#include "../../../include/ui/components/system_info.h"
 #include "../../../include/ui/graph/graphEvolution.h"
 #include "../../../include/system/performance.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <math.h>
 #include <time.h>
-
-#define TRAINING_GRAPH_WIDTH 400
-#define TRAINING_GRAPH_HEIGHT 160
 
 void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
 {
@@ -48,13 +46,17 @@ void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
 
     // Calculate column positions for 3-column layout
     int col1_x = 20;  // Text metrics column
-    int col2_x = col1_x + 350;  // Graphs column
+    int col2_x = col1_x + TRAINING_GRAPH_WIDTH - 20;  // Graphs column
+    int col3_x = col2_x + TRAINING_GRAPH_WIDTH + 30;  // System info column
 
     // Render main metrics panel (column 1)
     TrainingInterface_RenderMetrics(renderer, map, col1_x, 80, shouldUpdateText);
 
     // Render graphs (column 2)
     TrainingInterface_RenderGraphs(renderer, map, col2_x, 80);
+
+    // Render system info panel (column 3)
+    SystemInfo_RenderPanel(renderer, map, col3_x, 80);
 
     // Performance warning if needed
     if (map->evolutionMetrics.generationsSinceImprovement > 100) {
@@ -208,10 +210,10 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
     // Diversity progress bar
     SDL_Color diversityFgColor = {100, 180, 255, 255};
     float diversityPercent = map->evolutionMetrics.diversityIndex; // Diversity is already 0-1
-    
+
     char barText[100];
     sprintf(barText, "Diversity: %.3f", map->evolutionMetrics.diversityIndex);
-    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight,
                       diversityPercent, barText, barBgColor, diversityFgColor);
 
     // Best score progress (relative to max ever)
@@ -224,9 +226,9 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
                             (scorePercent > 0.7f) ? (SDL_Color){255, 200, 100, 255} :
                             (SDL_Color){255, 100, 100, 255};
 
-    sprintf(barText, "Current best (%d) vs Best (%d): %.1f%%", 
+    sprintf(barText, "Current best (%d) vs Best (%d): %.1f%%",
             map->cells[map->currentBestCellIndex]->score, map->maxScore, scorePercent * 100.0f);
-    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight,
                       scorePercent, barText, barBgColor, scoreFgColor);
 
     // Generation progress bar (alive cells / total initial cells)
@@ -250,9 +252,9 @@ void TrainingInterface_RenderGraphs(SDL_Renderer *renderer, Map *map, int x, int
                             (progressPercent > 0.2f) ? (SDL_Color){255, 150, 100, 255} :
                             (SDL_Color){100, 150, 255, 255};
 
-    sprintf(barText, "Generation Progress: %d/%d (%.1f%%)", 
+    sprintf(barText, "Generation Progress: %d/%d (%.1f%%)",
             aliveCount, GAME_START_CELL_COUNT, progressPercent * 100.0f);
-    ProgressBar_Render(renderer, x, barY, barWidth, barHeight, 
+    ProgressBar_Render(renderer, x, barY, barWidth, barHeight,
                       progressPercent, barText, barBgColor, aliveFgColor);
 }
 
@@ -278,7 +280,7 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
         // Pas de données, utiliser le composant progressbar
         SDL_Color grayBg = {35, 35, 40, 255};
         SDL_Color grayFg = {100, 100, 100, 255};
-        ProgressBar_Render(renderer, x, y, barWidth, barHeight, 0.0f, 
+        ProgressBar_Render(renderer, x, y, barWidth, barHeight, 0.0f,
                           "No performance data yet...", grayBg, grayFg);
         return;
     }
