@@ -52,6 +52,7 @@ struct Map
     bool renderNeuralNetwork;
     bool renderScoreGraph;
     bool renderEnabled;
+    bool useMultithreading;  // Runtime flag to enable/disable OpenMP multithreading
 
     // Screen mode
     int mode;

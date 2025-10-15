@@ -2,12 +2,15 @@
 #include "../../../include/core/utils.h"
 #include "../../../include/ui/ui_utils.h"
 #include "../../../include/ui/components/progressbar.h"
+#include "../../../include/ui/components/button.h"
 #include "../../../include/ui/components/system_info.h"
 #include "../../../include/ui/graph/graphEvolution.h"
 #include "../../../include/system/performance.h"
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <math.h>
 #include <time.h>
+
+static Button multithreadingButton;
 
 void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
 {
@@ -43,6 +46,28 @@ void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
 
     int statusX = TRAINING_SCREEN_WIDTH - 320;
     stringRGBA(renderer, statusX, 20, statusText, statusColor.r, statusColor.g, statusColor.b, statusColor.a);
+
+    // Initialize and draw multithreading button
+    static bool buttonInitialized = false;
+    if (!buttonInitialized) {
+        Button_Init(&multithreadingButton, 400, 10, 120, 25, "");
+        buttonInitialized = true;
+    }
+
+    // Update button text to current state
+#ifdef HAVE_OPENMP
+    sprintf(multithreadingButton.label, "MT: %s", map->useMultithreading ? "ON" : "OFF");
+    multithreadingButton.bgColor = map->useMultithreading ?
+        (SDL_Color){60, 120, 60, 255} : (SDL_Color){120, 60, 60, 255};
+    multithreadingButton.hoverColor = map->useMultithreading ?
+        (SDL_Color){80, 140, 80, 255} : (SDL_Color){140, 80, 80, 255};
+#else
+    sprintf(multithreadingButton.label, "MT: N/A");
+    multithreadingButton.bgColor = (SDL_Color){80, 80, 80, 255};
+    multithreadingButton.hoverColor = (SDL_Color){90, 90, 90, 255};
+#endif
+
+    Button_Render(renderer, &multithreadingButton);
 
     // Calculate column positions for 3-column layout
     int col1_x = 20;  // Text metrics column
@@ -118,6 +143,16 @@ void TrainingInterface_RenderMetrics(SDL_Renderer *renderer, Map *map, int x, in
     sprintf(text, "FPS: %d | UPS: %d | GPS: %.2f", map->currentFPS, map->currentUPS, map->currentGPS);
     SDL_Color perfColor = (map->currentUPS > 1000) ? goodColor : valueColor;
     stringRGBA(renderer, x, currentY, text, perfColor.r, perfColor.g, perfColor.b, perfColor.a);
+    currentY += lineHeight;
+
+#ifdef HAVE_OPENMP
+    sprintf(text, "Multithreading: %s", map->useMultithreading ? "ENABLED" : "DISABLED");
+    SDL_Color mtColor = map->useMultithreading ? goodColor : badColor;
+    stringRGBA(renderer, x, currentY, text, mtColor.r, mtColor.g, mtColor.b, mtColor.a);
+#else
+    sprintf(text, "Multithreading: NOT AVAILABLE");
+    stringRGBA(renderer, x, currentY, text, badColor.r, badColor.g, badColor.b, badColor.a);
+#endif
     currentY += lineHeight + 15;
 
     // Evolution metrics
@@ -332,4 +367,14 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
             cellProportion * 100.0,
             mutationProportion * 100.0);
     stringRGBA(renderer, x, legendY, legendText, textColor.r, textColor.g, textColor.b, textColor.a);
+}
+
+void TrainingInterface_HandleMouseEvents(Map *map, int mouseX, int mouseY, bool mousePressed)
+{
+#ifdef HAVE_OPENMP
+    // Check if the multithreading button was clicked
+    if (Button_Update(&multithreadingButton, mouseX, mouseY, mousePressed)) {
+        map->useMultithreading = !map->useMultithreading;
+    }
+#endif
 }

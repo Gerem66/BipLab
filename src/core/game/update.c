@@ -26,17 +26,29 @@ void Game_update(Map *map)
     }
     lastUPSTime = currentUPSTime;
 
-    // Update cells - Parallelized with OpenMP
+    // Update cells - Parallelized with OpenMP (if enabled)
 #ifdef HAVE_OPENMP
-    #pragma omp parallel for
-#endif
-    for (int i = 0; i < map->cellCount; ++i) {
-        if (map->cells[i] != NULL) {
-            PERF_MEASURE(PERF_CELL_UPDATE) {
-                Cell_update(map->cells[i], map);
+    if (map->useMultithreading) {
+        #pragma omp parallel for
+        for (int i = 0; i < map->cellCount; ++i) {
+            if (map->cells[i] != NULL) {
+                PERF_MEASURE(PERF_CELL_UPDATE) {
+                    Cell_update(map->cells[i], map);
+                }
             }
         }
+    } else {
+#endif
+        for (int i = 0; i < map->cellCount; ++i) {
+            if (map->cells[i] != NULL) {
+                PERF_MEASURE(PERF_CELL_UPDATE) {
+                    Cell_update(map->cells[i], map);
+                }
+            }
+        }
+#ifdef HAVE_OPENMP
     }
+#endif
 
     // Check generation
     bool allDead = true;

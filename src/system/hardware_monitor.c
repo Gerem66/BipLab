@@ -90,7 +90,7 @@ bool HwMonitor_Update(int frameNumber)
 
     clock_gettime(CLOCK_MONOTONIC, &currentTime);
 
-    double timeSinceLastUpdate = (currentTime.tv_sec - lastUpdateTime.tv_sec) + 
+    double timeSinceLastUpdate = (currentTime.tv_sec - lastUpdateTime.tv_sec) +
                                 (currentTime.tv_nsec - lastUpdateTime.tv_nsec) / 1e9;
 
     if (timeSinceLastUpdate < GRAPH_UPDATE_INTERVAL) {

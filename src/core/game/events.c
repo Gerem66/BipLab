@@ -1,5 +1,6 @@
 #include "../../../include/core/game.h"
 #include "../../../include/ui/ui.h"
+#include "../../../include/ui/interfaces/trainingInterface.h"
 
 void Game_events(Map *map, SDL_Event *event)
 {
@@ -156,9 +157,16 @@ void Game_events(Map *map, SDL_Event *event)
         }
     }
 
+    // Handle mouse events for training interface
+    if (map->mode == SCREEN_TRAINING) {
+        SDL_GetMouseState(&mouseX, &mouseY);
+        bool mousePressed = (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT);
+        TrainingInterface_HandleMouseEvents(map, mouseX, mouseY, mousePressed);
+    }
+
     // Drag and drop for view panning
     if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
-        if (map->zoomFactor > 1.0f) {
+        if (map->zoomFactor > 1.0f && map->mode == SCREEN_NORMAL) {
             map->isDragging = true;
             SDL_GetMouseState(&map->dragStartMouse.x, &map->dragStartMouse.y);
             map->dragStartView = map->viewOffset;
