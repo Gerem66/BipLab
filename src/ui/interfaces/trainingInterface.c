@@ -10,7 +10,11 @@
 #include <math.h>
 #include <time.h>
 
+
 static Button multithreadingButton;
+static Button gpuButton;
+static bool mtButtonInitialized = false;
+static bool gpuButtonInitialized = false;
 
 void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
 {
@@ -48,10 +52,14 @@ void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
     stringRGBA(renderer, statusX, 20, statusText, statusColor.r, statusColor.g, statusColor.b, statusColor.a);
 
     // Initialize and draw multithreading button
-    static bool buttonInitialized = false;
-    if (!buttonInitialized) {
+    if (!mtButtonInitialized) {
         Button_Init(&multithreadingButton, 400, 10, 120, 25, "");
-        buttonInitialized = true;
+        mtButtonInitialized = true;
+    }
+    // Initialize and draw GPU button
+    if (!gpuButtonInitialized) {
+        Button_Init(&gpuButton, 530, 10, 120, 25, "");
+        gpuButtonInitialized = true;
     }
 
     // Update button text to current state
@@ -67,7 +75,15 @@ void TrainingInterface_RenderDashboard(SDL_Renderer *renderer, Map *map)
     multithreadingButton.hoverColor = (SDL_Color){90, 90, 90, 255};
 #endif
 
+    // GPU button state
+    sprintf(gpuButton.label, "GPU: %s", map->useGpuAcceleration ? "ON" : "OFF");
+    gpuButton.bgColor = map->useGpuAcceleration ?
+        (SDL_Color){60, 120, 200, 255} : (SDL_Color){120, 60, 60, 255};
+    gpuButton.hoverColor = map->useGpuAcceleration ?
+        (SDL_Color){80, 140, 220, 255} : (SDL_Color){140, 80, 80, 255};
+
     Button_Render(renderer, &multithreadingButton);
+    Button_Render(renderer, &gpuButton);
 
     // Calculate column positions for 3-column layout
     int col1_x = 20;  // Text metrics column
@@ -145,6 +161,7 @@ void TrainingInterface_RenderMetrics(SDL_Renderer *renderer, Map *map, int x, in
     stringRGBA(renderer, x, currentY, text, perfColor.r, perfColor.g, perfColor.b, perfColor.a);
     currentY += lineHeight;
 
+    // Multithreading status
 #ifdef HAVE_OPENMP
     sprintf(text, "Multithreading: %s", map->useMultithreading ? "ENABLED" : "DISABLED");
     SDL_Color mtColor = map->useMultithreading ? goodColor : badColor;
@@ -153,22 +170,28 @@ void TrainingInterface_RenderMetrics(SDL_Renderer *renderer, Map *map, int x, in
     sprintf(text, "Multithreading: NOT AVAILABLE");
     stringRGBA(renderer, x, currentY, text, badColor.r, badColor.g, badColor.b, badColor.a);
 #endif
+    currentY += lineHeight;
+
+    // GPU status
+    sprintf(text, "GPU Acceleration: %s", map->useGpuAcceleration ? "ENABLED" : "DISABLED");
+    SDL_Color gpuColor = map->useGpuAcceleration ? (SDL_Color){60, 120, 200, 255} : badColor;
+    stringRGBA(renderer, x, currentY, text, gpuColor.r, gpuColor.g, gpuColor.b, gpuColor.a);
     currentY += lineHeight + 15;
 
     // Evolution metrics
-    sprintf(text, "EVOLUTION METRICS");
-    stringRGBA(renderer, x, currentY, text, labelColor.r, labelColor.g, labelColor.b, labelColor.a);
-    currentY += lineHeight;
+    // sprintf(text, "EVOLUTION METRICS");
+    // stringRGBA(renderer, x, currentY, text, labelColor.r, labelColor.g, labelColor.b, labelColor.a);
+    // currentY += lineHeight;
 
-    sprintf(text, "Convergence Rate: %.4f", map->evolutionMetrics.convergenceRate);
-    stringRGBA(renderer, x, currentY, text, valueColor.r, valueColor.g, valueColor.b, valueColor.a);
-    currentY += lineHeight;
+    // sprintf(text, "Convergence Rate: %.4f", map->evolutionMetrics.convergenceRate);
+    // stringRGBA(renderer, x, currentY, text, valueColor.r, valueColor.g, valueColor.b, valueColor.a);
+    // currentY += lineHeight;
 
-    sprintf(text, "Avg Score Improvement: %.4f", map->evolutionMetrics.avgScoreImprovement);
-    SDL_Color impColor = (map->evolutionMetrics.avgScoreImprovement > 0.01f) ? goodColor :
-                        (map->evolutionMetrics.avgScoreImprovement > 0.0f) ? valueColor : badColor;
-    stringRGBA(renderer, x, currentY, text, impColor.r, impColor.g, impColor.b, impColor.a);
-    currentY += lineHeight + 15;
+    // sprintf(text, "Avg Score Improvement: %.4f", map->evolutionMetrics.avgScoreImprovement);
+    // SDL_Color impColor = (map->evolutionMetrics.avgScoreImprovement > 0.01f) ? goodColor :
+    //                     (map->evolutionMetrics.avgScoreImprovement > 0.0f) ? valueColor : badColor;
+    // stringRGBA(renderer, x, currentY, text, impColor.r, impColor.g, impColor.b, impColor.a);
+    // currentY += lineHeight + 15;
 
     // Mutation parameters
     sprintf(text, "MUTATION PARAMETERS");
@@ -371,10 +394,14 @@ void TrainingInterface_RenderPerformanceBar(SDL_Renderer *renderer, int x, int y
 
 void TrainingInterface_HandleMouseEvents(Map *map, int mouseX, int mouseY, bool mousePressed)
 {
+    // Multithreading button
 #ifdef HAVE_OPENMP
-    // Check if the multithreading button was clicked
     if (Button_Update(&multithreadingButton, mouseX, mouseY, mousePressed)) {
         map->useMultithreading = !map->useMultithreading;
     }
 #endif
+    // GPU button
+    if (Button_Update(&gpuButton, mouseX, mouseY, mousePressed)) {
+        map->useGpuAcceleration = !map->useGpuAcceleration;
+    }
 }

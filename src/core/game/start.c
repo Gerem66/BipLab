@@ -34,6 +34,7 @@ bool Game_start(SDL_Window *window, SDL_Renderer *renderer, int w, int h)
     map.renderScoreGraph = false;
     map.renderEnabled = true;
     map.useMultithreading = true;
+    map.useGpuAcceleration = true;
     map.cellCount = 0;
     map.quit = false;
 
